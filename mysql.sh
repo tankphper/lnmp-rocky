@@ -198,6 +198,8 @@ function install_common {
     [ -f "$COMMON_LOCK" ] && return
     # 启用 Rocky 9 的官方代码就绪库（CRB）和安装 EPEL 源
     dnf config-manager --set-enabled crb >/dev/null 2>&1
+
+    echo "install dependency..."
     dnf install -y make cmake gcc gcc-c++ ncurses-devel openssl-devel libtirpc-devel bison \
         boost-devel rpcgen
     [ $? != 0 ] && error_exit "common dependence install err"
