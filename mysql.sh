@@ -200,7 +200,7 @@ function install_common {
     dnf config-manager --set-enabled crb >/dev/null 2>&1
 
     echo "install dependency..."
-    dnf install -y make cmake gcc gcc-c++ ncurses-devel openssl-devel libtirpc-devel bison \
+    dnf install -y wget make cmake gcc gcc-c++ ncurses-devel openssl-devel libtirpc-devel bison \
         boost-devel rpcgen
     [ $? != 0 ] && error_exit "common dependence install err"
 
