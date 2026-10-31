@@ -1,0 +1,15 @@
+[Unit]
+Description=MySQL Server by Custom Compile
+After=network.target syslog.target
+
+[Service]
+User=mysql
+Group=mysql
+Type=simple
+ExecStart=/www/server/mysql/bin/mysqld --defaults-file=/etc/my.cnf
+LimitNOFILE=65535
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
