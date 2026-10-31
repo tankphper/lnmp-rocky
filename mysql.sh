@@ -201,7 +201,8 @@ function install_common {
 
     echo "install dependency..."
     dnf install -y wget make cmake gcc gcc-c++ ncurses-devel openssl-devel libtirpc-devel bison \
-        boost-devel rpcgen
+        boost-devel rpcgen gcc-toolset-12-gcc gcc-toolset-12-gcc-c++ gcc-toolset-12-binutils \
+        gcc-toolset-12-annobin-annocheck gcc-toolset-12-annobin-plugin-gcc
     [ $? != 0 ] && error_exit "common dependence install err"
 
     # 创建专门运行 MySQL 的系统用户和组
