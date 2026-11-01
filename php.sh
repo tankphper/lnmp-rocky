@@ -36,10 +36,10 @@ COMMON_LOCK="$LOCK_DIR/php.common.lock"
 # nginx: --enable-fpm --with-fpm-user=www --with-fpm-group=www
 function install_php {
     
-    #[ ! -f /usr/lib64/libiconv.so ] && install_libiconv
-    #[ ! -f /usr/lib64/libmcrypt.so ] && install_mcrypt
-    #[ ! -f /usr/include/oniguruma.h ] && install_oniguruma
-    #if version_gt "$PHP_VERSION" "7.4.0"; then (install_libzip) fi
+    [ ! -f "/usr/lib64/libiconv.so" ] && install_libiconv
+    [ ! -f "/usr/local/mcrypt/lib/libmcrypt.so" ] && install_mcrypt
+    [ ! -f "/usr/local/include/oniguruma.h" ] && install_oniguruma
+    [ ! -f "/usr/local/include/zip.h" ] && install_libzip
 
     [ -f "$PHP_LOCK" ] && return
 
@@ -211,6 +211,7 @@ function install_mcrypt {
 
 # mbstring depend oniguruma
 # oniguruma install function
+# oniguruma_dir=/usr/local
 function install_oniguruma {
     [ -f "$ONIGURUMA_LOCK" ] && return
     echo "install oniguruma..."
