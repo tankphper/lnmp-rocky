@@ -50,7 +50,9 @@ function install_php {
     [ ! -f "$PHP_SRC$SRC_SUFFIX" ] && wget --no-check-certificate "$PHP_DOWN"
     tar -zxvf "$PHP_SRC$SRC_SUFFIX"
     cd "$PHP_SRC" || error_exit "Failed to enter dir: $PHP_SRC"
+
     make clean > /dev/null 2>&1
+
     ./configure \
         --prefix="$INSTALL_DIR/$PHP_DIR" \
         --with-config-file-path="$INSTALL_DIR/$PHP_DIR/etc" \
@@ -304,7 +306,9 @@ function install_common {
     dnf install -y epel-release >/dev/null 2>&1
     # 强行刷新 DNF 缓存，确保系统能够立刻识别来自 EPEL 的高级开发包
     dnf makecache >/dev/null 2>&1
+
     # Rocky 9 完美适配版依赖包列表
+    echo "install dependency..."
     dnf install -y wget gcc gcc-c++ make autoconf gd-devel freetype-devel libxml2-devel \
         libjpeg-turbo-devel libpng-devel openssl-devel sqlite-devel libtool \
         libcurl-devel patch ncurses-devel bzip2 libcap-devel diffutils \
