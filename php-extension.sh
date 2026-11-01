@@ -4,9 +4,8 @@ SRC_DIR="$ROOT/src"
 LOCK_DIR="$ROOT/lock"
 SRC_SUFFIX=".tar.gz"
 EXT_VER=${2:-""}
-#PHP_VER=$(php --version | grep "^PHP" | awk '{print $2}')
 PHP_VER=$(php-config --version)
-PHP_API_VER=$(phpize --version | grep "PHP Api Version*" | awk '{print $NF}')
+PHP_API_VER=$(phpize --version | awk '/PHP Api Version/ {print $NF}')
 PHP_EXT_DIR=$(php-config --extension-dir)
 PHP_PREFIX=$(php-config --prefix)
 
@@ -16,8 +15,11 @@ echo "PHP_EXT_DIR: $PHP_EXT_DIR"
 echo "EXT_VER: $EXT_VER"
 
 # add extension file to php.ini
+# 完美对齐多版本 php.d 动态扫描规范，且全量双引号加固
 function echo_ini {
-    echo "extension=$PHP_EXT_DIR/$1.so" >> $PHP_PREFIX/etc/php.ini
+    # $1 传入扩展名，如 "redis"
+    # 直接在专属的 php.d 目录下创建一个独立的 [扩展名.ini] 文件
+    echo "extension=$1.so" > "$PHP_PREFIX/etc/php.d/$1.ini"
 }
 
 # --enable-async-redis require hiredis library supported
@@ -113,10 +115,12 @@ function add_xlswriter {
     phpize
     ./configure --with-php-config=/www/server/php-$PHP_VER/bin/php-config --enable-reader
     [ $? != 0 ] && error_exit "xlswriter configure err"
-    make
+
+    make -j "$(nproc)"
     [ $? != 0 ] && error_exit "xlswriter make err"
     make install
     [ $? != 0 ] && error_exit "xlswriter make install err"
+
     echo_ini xlswriter
 }
 

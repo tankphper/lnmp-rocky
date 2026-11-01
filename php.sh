@@ -102,18 +102,32 @@ function install_php {
         ln -sf "$INSTALL_DIR/php/bin/php" /usr/bin/php
     fi
 
+    # 在 php-fpm 启动前，创建公共日志目录并赋权给 www 用户
+    mkdir -p /www/logs/php
+    chown -R www:www /www/logs/php
+    chmod 750 /www/logs/php
+
     # 初始化并隔离每个独立版本的配置文件
     [ ! -d "$INSTALL_DIR/$PHP_DIR/etc" ] && mkdir -p "$INSTALL_DIR/$PHP_DIR/etc"
     [ ! -d "$INSTALL_DIR/$PHP_DIR/etc/php.d" ] && mkdir -p "$INSTALL_DIR/$PHP_DIR/etc/php.d"
 
     # 复制并初始化 php.ini 基础配置
     cp -f php.ini-production "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
-    sed -i 's@^;date.timezone.*@date.timezone = Asia/Shanghai@' "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
+    sed -i 's#^;date.timezone =.*#date.timezone = Asia/Shanghai#' "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
+    sed -i "s@^display_errors =.*@display_errors = Off@" "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
+    sed -i "s@^log_errors =.*@log_errors = On@" "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
+    sed -i "s@^;error_log = php_errors.log.*@error_log = /www/logs/php/php.error.log@" "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
 
     # 复制并初始化 php-fpm 基础配置
     cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
-    cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
     sed -i "s#^;pid = run/php-fpm.pid#pid = run/php-fpm.pid#" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
+    sed -i "s#^;error_log =.*#error_log = /www/logs/php/php-fpm.error.log#" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
+
+    # 复制并初始化 www.conf 基础配置
+    cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^;slowlog =.*@slowlog = /www/logs/php/php-fpm.slow.log@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^;request_slowlog_timeout =.*@request_slowlog_timeout = 5s@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^;catch_workers_output =.*@catch_workers_output = yes@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
 
     # 复制静态 Systemd 模板，并赋予标准读取权限
     cp -f ./sapi/fpm/php-fpm.service /etc/systemd/system/
