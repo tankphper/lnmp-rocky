@@ -36,10 +36,10 @@ COMMON_LOCK="$LOCK_DIR/php.common.lock"
 # nginx: --enable-fpm --with-fpm-user=www --with-fpm-group=www
 function install_php {
     
-    [ ! -f "/usr/lib64/libiconv.so" ] && install_libiconv
-    [ ! -f "/usr/local/mcrypt/lib/libmcrypt.so" ] && install_mcrypt
-    [ ! -f "/usr/local/include/oniguruma.h" ] && install_oniguruma
-    [ ! -f "/usr/local/include/zip.h" ] && install_libzip
+    #[ ! -f "/usr/lib64/libiconv.so" ] && install_libiconv
+    #[ ! -f "/usr/local/mcrypt/lib/libmcrypt.so" ] && install_mcrypt
+    #[ ! -f "/usr/local/include/oniguruma.h" ] && install_oniguruma
+    #[ ! -f "/usr/local/include/zip.h" ] && install_libzip
 
     [ -f "$PHP_LOCK" ] && return
 
@@ -305,11 +305,11 @@ function install_common {
     dnf makecache >/dev/null 2>&1
     # Rocky 9 完美适配版依赖包列表
     dnf install -y wget gcc gcc-c++ make autoconf gd-devel freetype-devel libxml2-devel \
-        libjpeg-turbo-devel libpng-devel openssl-devel sqlite-devel libtool libzip libzip-devel \
+        libjpeg-turbo-devel libpng-devel openssl-devel sqlite-devel libtool \
         libcurl-devel patch ncurses-devel bzip2 libcap-devel diffutils \
         bison libicu-devel net-tools psmisc vim vim-enhanced \
         zip unzip telnet tcpdump ipset lsof iptables iptables-services \
-        oniguruma-devel libwebp-devel libzstd-devel libmcrypt-devel
+        libzip libzip-devel oniguruma-devel libwebp-devel libzstd-devel libmcrypt-devel
     [ $? != 0 ] && error_exit "common dependency install err"
 
     # 创建专门运行 openresty 和 php-fpm 的系统用户和组
