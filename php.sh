@@ -2,7 +2,8 @@
 
 # PHP 7.4 (and PHP 8.0) are not compatible with OpenSSL 3. 
 # Either use PHP 8.1, or stick with OpenSSL 1.1 with these older PHP versions.
-read -p "Enter php version like 8.3.36: " PHP_VERSION
+read -p "Enter php version like 8.3.36: " INPUT_VERSION
+PHP_VERSION="${INPUT_VERSION:-8.3.36}"
 
 INSTALL_DIR="/www/server"
 SRC_DIR="$ROOT/src"
