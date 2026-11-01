@@ -7,17 +7,14 @@ SRC_SUFFIX=".tar.gz"
 # mysql source
 MYSQL_DOWN="https://cdn.mysql.com/archives/mysql-8.0/mysql-8.0.40.tar.gz"
 MYSQL_SRC="mysql-8.0.40"
-MYSQL_DIR="$MYSQL_SRC"
 MYSQL_LOCK="$LOCK_DIR/mysql.lock"
 # cmake tool source
 CMAKE_DOWN="https://cmake.org/files/v3.19/cmake-3.19.2.tar.gz"
 CMAKE_SRC="cmake-3.19.2"
-CMAKE_DIR="$CMAKE_SRC"
 CMAKE_LOCK="$LOCK_DIR/mysql.cmake.lock"
 # 1.72.0 for mysql 8.0.x
 BOOST_DOWN="https://gitlab.com/lnmp-shell/lnmp-files/-/raw/master/boost_1_72_0.tar.gz"
 BOOST_SRC="boost_1_72_0"
-BOOST_DIR="$BOOST_SRC"
 BOOST_LOCK="$LOCK_DIR/mysql.boost.lock"
 # mysql-8.0.x require rpcgen
 RPCGEN_DOWN="https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4.2/rpcsvc-proto-1.4.2.tar.xz"
@@ -42,8 +39,8 @@ function install_mysql {
     cd build || error_exit "Failed to enter build directory"
     # 确保 data 目录为空，确保 boost 目录路径，PREFIX 必须是绝对路径
     cmake .. \
-        -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/$MYSQL_DIR" \
-        -DMYSQL_DATADIR="$INSTALL_DIR/$MYSQL_DIR/data" \
+        -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR/$MYSQL_SRC" \
+        -DMYSQL_DATADIR="$INSTALL_DIR/$MYSQL_SRC/data" \
         -DSYSCONFDIR="$INSTALL_DIR/etc" \
         -DMYSQL_UNIX_ADDR=/var/lib/mysql/mysql.sock \
         -DWITH_INNOBASE_STORAGE_ENGINE=1 \
@@ -98,12 +95,12 @@ function install_mysql {
 
     # 初始化数据库
     # 确保实际版本的安装目录和数据目录权限正确
-    chown -R mysql:mysql "$INSTALL_DIR/$MYSQL_DIR"
+    chown -R mysql:mysql "$INSTALL_DIR/$MYSQL_SRC"
     # --initialize 设置一个随机密码到日志文件
     # --initialize-insecure 设置一个空密码的 root 用户
     # 使用实际版本路径进行精准初始化
-    "$INSTALL_DIR/$MYSQL_DIR/bin/mysqld" --defaults-file=/etc/my.cnf --initialize-insecure  --user=mysql \
-        --basedir="$INSTALL_DIR/$MYSQL_DIR" --datadir="$INSTALL_DIR/$MYSQL_DIR/data"
+    "$INSTALL_DIR/$MYSQL_SRC/bin/mysqld" --defaults-file=/etc/my.cnf --initialize-insecure  --user=mysql \
+        --basedir="$INSTALL_DIR/$MYSQL_SRC" --datadir="$INSTALL_DIR/$MYSQL_SRC/data"
     # 开机启动脚本
     cp "$ROOT/mysql.conf/mysqld.service" /etc/systemd/system/mysqld.service
     chmod 644 /etc/systemd/system/mysqld.service
