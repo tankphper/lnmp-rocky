@@ -53,42 +53,75 @@ function install_php {
     ./configure \
         --prefix="$INSTALL_DIR/$PHP_DIR" \
         --with-config-file-path="$INSTALL_DIR/$PHP_DIR/etc" \
+        --with-config-file-scan-dir="$INSTALL_DIR/$PHP_DIR/etc/php.d" \
         --enable-fpm --with-fpm-user=www --with-fpm-group=www \
-        --enable-mysqlnd --with-mysql=mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd \
-        --with-iconv --with-mcrypt=/usr \
-        --enable-gd --with-freetype --with-jpeg --with-zip \
-        --with-zlib --with-libxml-dir=/usr --with-curl --with-openssl --with-xmlrpc --with-gettext \
+        --enable-mysqlnd --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd \
+        --with-openssl --with-zlib --with-curl \
+        --enable-mbstring --enable-opcache --enable-soap --enable-bcmath --enable-calendar \
+        --with-jpeg \
+        --with-webp \
+        --with-freetype \
+        --with-zstd \
+        --with-zip \
+        --with-pic \
+        --enable-gd \
+        --enable-intl \
+        --enable-sockets \
+        --enable-pcntl \
+        --enable-shmop \
+        --enable-exif \
         --enable-inline-optimization \
-        --enable-mbregex --enable-mbstring --enable-ftp --enable-intl --enable-xml --enable-bcmath \
-        --enable-exif --enable-shmop --enable-pcntl --enable-soap --enable-sockets --enable-opcache \
+        --enable-mbregex \
+        --enable-ftp \
+        --enable-xml \
+        --with-libxml \
+        --with-gettext \
+        --with-iconv \
         --disable-rpath --disable-ipv6 --disable-debug
     [ $? != 0 ] && error_exit "php configure err"
-    make ZEND_EXTRA_LIBS='-liconv' -j $CPUS
+
+    make ZEND_EXTRA_LIBS='-liconv' -j "$(nproc)"
     [ $? != 0 ] && error_exit "php make err"
     make install
     [ $? != 0 ] && error_exit "php install err"
-    # php link dir
+
+    # 建立多版本公共软链接
     ln -sf "$INSTALL_DIR/$PHP_DIR" "$INSTALL_DIR/php"
-    # copy php.ini-production to $PHP_DIR
-    cp php.ini-production "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
-    # replace php.ini config
+
+    # 将全局快捷命令安全注入自定义用户 bin 目录下
+    ln -sf "$INSTALL_DIR/php/bin/php" /usr/local/bin/php
+    ln -sf "$INSTALL_DIR/php/bin/phpize" /usr/local/bin/phpize
+    ln -sf "$INSTALL_DIR/php/bin/php-config" /usr/local/bin/php-config
+    ln -sf "$INSTALL_DIR/php/sbin/php-fpm" /usr/local/sbin/php-fpm
+
+    # 如果 /usr/bin/php 不存在，则建立安全的保底软链
+    if [ ! -f /usr/bin/php ] && [ ! -L /usr/bin/php ]; then
+        ln -sf "$INSTALL_DIR/php/bin/php" /usr/bin/php
+    fi
+
+    # 初始化并隔离每个独立版本的配置文件
+    [ ! -d "$INSTALL_DIR/$PHP_DIR/etc" ] && mkdir -p "$INSTALL_DIR/$PHP_DIR/etc"
+    [ ! -d "$INSTALL_DIR/$PHP_DIR/etc/php.d" ] && mkdir -p "$INSTALL_DIR/$PHP_DIR/etc/php.d"
+
+    # 复制并初始化 php.ini 基础配置
+    cp -f php.ini-production "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
     sed -i 's@^;date.timezone.*@date.timezone = Asia/Shanghai@' "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
-    ln -sf "$INSTALL_DIR/$PHP_DIR/bin/php" /usr/local/bin/php
-    ln -sf "$INSTALL_DIR/$PHP_DIR/bin/phpize" /usr/local/bin/phpize
-    ln -sf "$INSTALL_DIR/$PHP_DIR/bin/php-config" /usr/local/bin/php-config
-    # php version
+
+    # 复制并初始化 php-fpm 基础配置
     cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
     cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
-    # php-fpm config
-    sed -i "s@^;pid = run/php-fpm.pid@pid = run/php-fpm.pid@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
-    # for php-fpm
-    cp -f ./sapi/fpm/php-fpm.service /usr/lib/systemd/system/
-    sed -i "s@${prefix}@/www/server/php@" /usr/lib/systemd/system/php-fpm.service
-    sed -i "s@${exec_prefix}@/www/server/php@" /usr/lib/systemd/system/php-fpm.service
-    # 开机启动
+    sed -i "s#^;pid = run/php-fpm.pid#pid = run/php-fpm.pid#" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
+
+    # 复制静态 Systemd 模板，并赋予标准读取权限
+    cp -f ./sapi/fpm/php-fpm.service /etc/systemd/system/
+    chmod 644 /etc/systemd/system/php-fpm.service
+    sed -i "s#@prefix@#$INSTALL_DIR/php#" /etc/systemd/system/php-fpm.service
+    sed -i "s#@exec_prefix@#$INSTALL_DIR/php#" /etc/systemd/system/php-fpm.service
+
+    # 注册并启动 Systemd 服务
     systemctl daemon-reload
-    systemctl start php-fpm.service
-    systemctl enable php-fpm.service
+    systemctl enable php-fpm
+    systemctl start php-fpm
 
     echo  
     echo "install php complete."
@@ -105,18 +138,29 @@ function install_libiconv {
     [ ! -f "$ICONV_SRC$SRC_SUFFIX" ] && wget "$ICONV_DOWN"
     tar -zxvf "$ICONV_SRC$SRC_SUFFIX"
     cd "$ICONV_SRC" || error_exit "Failed to enter dir: $ICONV_SRC"
-    ./configure --prefix=/usr/local/libiconv
+
+    ./configure --prefix=/usr/local/libiconv --enable-static
     [ $? != 0 ] && error_exit "libiconv configure err"
+
+    # 彻底抹除旧源码中在现代 glibc 环境下会导致编译崩溃的 gets 包装宏隐患
+    if [ -f "srclib/stdio.in.h" ]; then
+        sed -i -e '/_GL_WARN_ON_USE (gets,.*)/d' srclib/stdio.in.h
+    fi
+
     make -j "$(nproc)"
     [ $? != 0 ] && error_exit "libiconv make err"
     make install
     [ $? != 0 ] && error_exit "libiconv install err"
+
     # link to /usr/lib64
     ln -sf /usr/local/libiconv/lib/libiconv.so /usr/lib64/
     ln -sf /usr/local/libiconv/lib/libiconv.so.2 /usr/lib64/
-    
-    # refresh active lib
+
+    # 将实际的 lib 目录写进系统动态链接缓存中，完美防止 PHP 运行时找不到库
+    echo '/usr/local/libiconv/lib' > /etc/ld.so.conf.d/libiconv-wdl.conf
+    # 刷新动态链接库
     ldconfig
+
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     rm -fr "$ICONV_SRC"
     
@@ -126,7 +170,7 @@ function install_libiconv {
 }
 
 # mcrypt install function
-# mcrypt_dir=/usr
+# mcrypt_dir=/usr/local/mcrypt
 function install_mcrypt {
     [ -f "$MCRYPT_LOCK" ] && return
     echo "install mcrypt..."
@@ -135,18 +179,28 @@ function install_mcrypt {
     [ ! -f "$MCRYPT_SRC$SRC_SUFFIX" ] && wget "$MCRYPT_DOWN"
     tar -zxvf "$MCRYPT_SRC$SRC_SUFFIX"
     cd "$MCRYPT_SRC" || error_exit "Failed to enter dir: $MCRYPT_SRC"
-    ./configure --prefix=/usr
+    ./configure --prefix=/usr/local/mcrypt
     [ $? != 0 ] && error_exit "mcrypt configure err"
+
     make
     [ $? != 0 ] && error_exit "mcrypt make err"
     make install
     [ $? != 0 ] && error_exit "mcrypt install err"
-    
-    # refresh active lib
+
+    # 将标准库路径注入系统动态缓存并刷新
+    echo '/usr/local/mcrypt/lib' > /etc/ld.so.conf.d/mcrypt-wdl.conf
+    # 刷新动态链接库
     ldconfig
+
+    # 精准拆解 libltdl 的编译流，规避 && 串联时可能引发的间接错误漏检隐患
     cd libltdl || error_exit "Failed to enter dir: libltdl"
-    ./configure --enable-ltdl-install && make && make install
+    ./configure --enable-ltdl-install
+    [ $? != 0 ] && error_exit "mcrypt ltdl configure err"
+    make -j "$(nproc)"
+    [ $? != 0 ] && error_exit "mcrypt ltdl make err"
+    make install
     [ $? != 0 ] && error_exit "mcrypt ltdl install err"
+
     cd "$SRC_DIR"|| error_exit "Failed to enter dir: $SRC_DIR"
     rm -fr "$MCRYPT_SRC"
     
@@ -156,24 +210,39 @@ function install_mcrypt {
 }
 
 # mbstring depend oniguruma
-# Centos 8 install oniguruma
+# oniguruma install function
 function install_oniguruma {
     [ -f "$ONIGURUMA_LOCK" ] && return
     echo "install oniguruma..."
 
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    wget "$ONIGURUMA_DOWN" -O "$ONIGURUMA_SRC.tar.gz"
+
+    # 统一使用你的变量名
+    [ ! -f "$ONIGURUMA_SRC.tar.gz" ] && wget "$ONIGURUMA_DOWN" -O "$ONIGURUMA_SRC.tar.gz"
     tar -zxvf "$ONIGURUMA_SRC.tar.gz"
     cd "$ONIGURUMA_SRC" || error_exit "Failed to enter dir: $ONIGURUMA_SRC"
-    ./autogen.sh && ./configure --prefix=/usr
+
+    # 安全拆解 ./autogen.sh，防止命令连击时无法精准定位错误
+    if [ -f "autogen.sh" ]; then
+        ./autogen.sh
+        [ $? != 0 ] && error_exit "oniguruma autogen err"
+    fi
+
+    # 标准的 /usr/local 前缀锁定，防止去污染 Rocky Linux 9 官方保护的核心系统
+    ./configure --prefix=/usr/local --enable-shared --enable-static
     [ $? != 0 ] && error_exit "oniguruma configure err"
+
     make
     [ $? != 0 ] && error_exit "oniguruma make err"
     make install
     [ $? != 0 ] && error_exit "oniguruma install err"
    
-    # refresh active lib
-    ldconfig 
+    # 将实际的 64 位和 32 位动态库路径及 pkgconfig 注册进系统
+    # 彻底杜绝后续 PHP 8.3 编译 --enable-mbstring 时报 "oniguruma not found" 的硬伤
+    echo '/usr/local/lib' > /etc/ld.so.conf.d/oniguruma-wdl.conf
+    # 刷新动态链接库
+    ldconfig
+
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     rm -fr "$ONIGURUMA_SRC"
 
@@ -188,17 +257,32 @@ function install_libzip {
     echo "install libzip..."
 
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    wget "$LIBZIP_DOWN" -O "$LIBZIP_SRC.tar.gz"
+    # 规范下载：统一使用你的变量名，并加上防护
+    [ ! -f "$LIBZIP_SRC.tar.gz" ] && wget "$LIBZIP_DOWN" -O "$LIBZIP_SRC.tar.gz"
     tar -zxvf "$LIBZIP_SRC.tar.gz"
     cd "$LIBZIP_SRC" || error_exit "Failed to enter dir: $LIBZIP_SRC"
-    mkdir build
+
+    mkdir -p build
     cd build || error_exit "Failed to enter dir: build"
+
     cmake ..
+    [ $? != 0 ] && error_exit "libzip configure err"
+
+    # 执行编译，开启多核加速榨干 2h4g 性能
+    make -j "$(nproc)"
     [ $? != 0 ] && error_exit "libzip make err"
     make install
     [ $? != 0 ] && error_exit "libzip install err"
 
-    #export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig/"
+    # 将编译产出的 64 位 pkgconfig 路径注入全局系统变量中，使用单引号
+    # 彻底杜绝后续 PHP 8.3 编译时报 "libzip >= 0.11 not found" 的经典死锁
+    if [ ! -f /etc/profile.d/pkgconfig.sh ]; then
+        echo 'export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH' > /etc/profile.d/pkgconfig.sh
+        chmod +x /etc/profile.d/pkgconfig.sh
+    fi
+    # 让当前 shell 脚本进程立刻在内存中加载这个变量
+    export PKG_CONFIG_PATH="/usr/local/lib64/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib64/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH"
+
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     rm -fr "$LIBZIP_SRC"
 
@@ -219,13 +303,12 @@ function install_common {
     # 强行刷新 DNF 缓存，确保系统能够立刻识别来自 EPEL 的高级开发包
     dnf makecache >/dev/null 2>&1
     # Rocky 9 完美适配版依赖包列表
-    dnf install -y wget gcc gcc-c++ make autoconf gd-devel \
-        freetype-devel libxml2-devel libjpeg-turbo-devel libpng-devel openssl-devel \
-        sqlite-devel libtool libzip libzip-devel \
+    dnf install -y wget gcc gcc-c++ make autoconf gd-devel freetype-devel libxml2-devel \
+        libjpeg-turbo-devel libpng-devel openssl-devel sqlite-devel libtool libzip libzip-devel \
         libcurl-devel patch ncurses-devel bzip2 libcap-devel diffutils \
         bison libicu-devel net-tools psmisc vim vim-enhanced \
         zip unzip telnet tcpdump ipset lsof iptables iptables-services \
-        oniguruma-devel libwebp-devel libzstd-devel
+        oniguruma-devel libwebp-devel libzstd-devel libmcrypt-devel
     [ $? != 0 ] && error_exit "common dependency install err"
 
     # 创建专门运行 openresty 和 php-fpm 的系统用户和组

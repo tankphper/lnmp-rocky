@@ -65,11 +65,16 @@ function install_mysql {
     [ $? != 0 ] && error_exit "mysql install err"
     # 切换到源码根目录
     cd .. || error_exit "Failed to return to mysql source root directory"
+
+    # 建立多版本公共软链接
     ln -sf "$INSTALL_DIR/$MYSQL_SRC" "$INSTALL_DIR/mysql"
-    ln -sf "$INSTALL_DIR/mysql/bin/mysql" /usr/local/bin/
-    ln -sf "$INSTALL_DIR/mysql/bin/mysqldump" /usr/local/bin/
-    ln -sf "$INSTALL_DIR/mysql/bin/mysqlslap" /usr/local/bin/
-    ln -sf "$INSTALL_DIR/mysql/bin/mysqladmin" /usr/local/bin/
+
+    # 将全局快捷命令安全注入自定义用户 bin 目录下
+    ln -sf "$INSTALL_DIR/mysql/bin/mysql" /usr/local/bin/mysql
+    ln -sf "$INSTALL_DIR/mysql/bin/mysqldump" /usr/local/bin/mysqldump
+    ln -sf "$INSTALL_DIR/mysql/bin/mysqlslap" /usr/local/bin/mysqlslap
+    ln -sf "$INSTALL_DIR/mysql/bin/mysqladmin" /usr/local/bin/mysqladmin
+
     # 备份旧配置文件
     [ -f /etc/my.cnf ] && mv /etc/my.cnf /etc/my.cnf.old
     # 复制新配置文件
@@ -102,13 +107,14 @@ function install_mysql {
     # 使用实际版本路径进行精准初始化
     "$INSTALL_DIR/$MYSQL_DIR/bin/mysqld" --defaults-file=/etc/my.cnf --initialize-insecure  --user=mysql \
         --basedir="$INSTALL_DIR/$MYSQL_DIR" --datadir="$INSTALL_DIR/$MYSQL_DIR/data"
-    # 开机启动脚本
+
+    # 复制静态 Systemd 模板，并赋予标准读取权限
     cp "$ROOT/mysql.conf/mysqld.service" /etc/systemd/system/mysqld.service
     chmod 644 /etc/systemd/system/mysqld.service
-    # 设置开机启动
+
+    # 注册并启动 Systemd 服务
     systemctl daemon-reload
     systemctl enable mysqld
-    # 启动数据库
     systemctl start mysqld
 
     # 稍微等待 2 秒确保本地 Socket 文件完全吐出来
