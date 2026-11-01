@@ -83,7 +83,7 @@ function install_php {
         --disable-rpath --disable-ipv6 --disable-debug
     [ $? != 0 ] && error_exit "php configure err"
 
-    make ZEND_EXTRA_LIBS='-liconv' -j "$(nproc)"
+    make -j "$(nproc)"
     [ $? != 0 ] && error_exit "php make err"
     make install
     [ $? != 0 ] && error_exit "php install err"
