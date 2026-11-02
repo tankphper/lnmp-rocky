@@ -4,14 +4,14 @@ INSTALL_DIR="/www/server"
 LOCK_DIR="$ROOT/lock"
 SRC_DIR="$ROOT/src"
 SRC_SUFFIX=".tar.gz"
-# openresty source
+# OpenResty 源码配置
 OPENRESTY_DOWN="https://openresty.org/download/openresty-1.27.1.2.tar.gz"
 OPENRESTY_DIR="openresty-1.27.1.2"
 OPENRESTY_LOCK="$LOCK_DIR/openresty.lock"
-# common dependency fo nginx
+# 锁机制定义
 COMMON_LOCK="$LOCK_DIR/openresty.common.lock"
 
-# openresty install function
+# OpenResty 主安装函数
 function install_openresty {
     [ -f "$OPENRESTY_LOCK" ] && return
      
@@ -22,6 +22,7 @@ function install_openresty {
     cd "$OPENRESTY_DIR" || error_exit "Failed to enter dir: $OPENRESTY_DIR"
     make clean > /dev/null 2>&1
 
+    # 关闭 Nginx 调试符号，缩减体积，提高运行效率
     sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
@@ -42,10 +43,26 @@ function install_openresty {
     make install
     [ $? != 0 ] && error_exit "openresty install err"
 
+    # 调用公共配置块规范化环境并启动
+    configure_openresty
+
+    echo  
+    echo "install openresty complete."
+    touch "$OPENRESTY_LOCK"
+}
+
+# 提取公共环境规范函数，消除 install_openresty 和 add_module 的重复冗余代码
+function configure_openresty {
+    echo "configure openresty..."
+
+    # 显式分离创建子目录，规避非交互式 Shell 花括号扩展不解析的地雷
     mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/vhost"
     mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite"
 
-    [ -L "$INSTALL_DIR/nginx" ] && rm -r "$INSTALL_DIR/nginx"
+    # 使用 rm -f 只删除软链接本身，绝不使用 -r 递归，彻底规避原文件被抹除的灾难
+    [ -L "$INSTALL_DIR/nginx" ] || [ -f "$INSTALL_DIR/nginx" ] && rm -f "$INSTALL_DIR/nginx"
+
+    # 建立标准软链接和快捷命令
     ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx" "$INSTALL_DIR/nginx"
     ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx/sbin/nginx" /usr/local/bin/nginx
 
@@ -53,26 +70,38 @@ function install_openresty {
     cp -f "$ROOT/nginx.conf/nginx.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/nginx.conf"
     cp -f "$ROOT/nginx.conf/rule.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite/rule.conf"
 
-    # 复制静态 Systemd 模板，并赋予标准读取权限
+    # 复制静态 Systemd 模板，并赋予标准可读权限
     cp -f "$ROOT/nginx.conf/nginxd.service" /etc/systemd/system/nginxd.service
     chmod 644 /etc/systemd/system/nginxd.service
 
     # 注册并启动 Systemd 服务
     systemctl daemon-reload
-    systemctl enable nginxd
-    systemctl start nginxd
+    systemctl enable nginxd >/dev/null 2>&1
 
-    echo  
-    echo "install openresty complete."
-    touch "$OPENRESTY_LOCK"
+    if systemctl is-active nginxd >/dev/null 2>&1; then
+        echo "Reloading nginxd service to apply changes..."
+        systemctl restart nginxd
+    else
+        systemctl start nginxd
+    fi
 }
 
-# add nginx third module
+# 动态添加 Nginx 第三方模块函数
 function add_module {
     echo "install module..."
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    git clone https://github.com/wandenberg/nginx-push-stream-module.git
+
+    # 幂等性优化：只有在模块目录不存在时才克隆，防止二次运行报错
+    if [ ! -d "nginx-push-stream-module" ]; then
+        git clone https://github.com/wandenberg/nginx-push-stream-module.git
+        [ $? != 0 ] && error_exit "git clone nginx-push-stream-module failed"
+    fi
+
     cd "$OPENRESTY_DIR" || error_exit "Failed to enter dir: $OPENRESTY_DIR"
+    make clean > /dev/null 2>&1
+
+    # 环境镜像同步：升级模块时同样关闭调试符号，保证二进制文件一致性
+    sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
         --with-pcre2 \
@@ -92,6 +121,9 @@ function add_module {
     [ $? != 0 ] && error_exit "openresty make err"
     make install
     [ $? != 0 ] && error_exit "openresty install err"
+
+    # 追加模块后同样刷新运行环境并安全重启
+    configure_openresty
 
     echo  
     echo "add module complete."
