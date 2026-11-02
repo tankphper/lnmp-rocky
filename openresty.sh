@@ -26,7 +26,7 @@ function install_openresty {
     sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
-        --with-pcre2 \
+        --with-pcre-jit \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \
@@ -104,7 +104,7 @@ function add_module {
     sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
-        --with-pcre2 \
+        --with-pcre-jit \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \
