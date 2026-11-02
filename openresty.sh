@@ -4,11 +4,6 @@ INSTALL_DIR="/www/server"
 LOCK_DIR="$ROOT/lock"
 SRC_DIR="$ROOT/src"
 SRC_SUFFIX=".tar.gz"
-# dependency of nginx
-#PCRE_DOWN="ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.43.tar.gz"
-PCRE_DOWN="https://ftp.pcre.org/pub/pcre/pcre-8.43.tar.gz"
-PCRE_SRC="pcre-8.43"
-PCRE_LOCK="$LOCK_DIR/pcre.lock"
 # openresty source
 OPENRESTY_DOWN="https://openresty.org/download/openresty-1.27.1.2.tar.gz"
 OPENRESTY_SRC="openresty-1.27.1.2"
@@ -31,6 +26,7 @@ function install_openresty {
     sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_SRC" --user=www --group=www \
+        --with-pcre2 \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \
@@ -47,13 +43,15 @@ function install_openresty {
     make install
     [ $? != 0 ] && error_exit "openresty install err"
 
-    mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/{vhost,rewrite}"
-    [ -L "$INSTALL_DIR/nginx" ] && rm -fr "$INSTALL_DIR/nginx"
+    mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/vhost"
+    mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite"
+
+    [ -L "$INSTALL_DIR/nginx" ] && rm -r "$INSTALL_DIR/nginx"
     ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx" "$INSTALL_DIR/nginx"
     ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx/sbin/nginx" /usr/local/bin/nginx
-    # default web dir
+    # 创建 WEB 目录
     [ ! -d /www/web ] && mkdir -p /www/web
-    # cp default conf and tp rewrite rule
+    # 复制配置文件和伪静态文件模板
     cp -f "$ROOT/nginx.conf/nginx.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/nginx.conf"
     cp -f "$ROOT/nginx.conf/rule.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite/rule.conf"
 
@@ -70,44 +68,15 @@ function install_openresty {
     touch "$OPENRESTY_LOCK"
 }
 
-# pcre install function
-# nginx rewrite depend pcre
-# pcre_dir=/usr
-function install_pcre {
-    [ -f "$PCRE_LOCK" ] && return
-
-    echo "install pcre..."
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$PCRE_SRC$SRC_SUFFIX" ] && wget "$PCRE_DOWN"
-    tar -zxvf "$PCRE_SRC$SRC_SUFFIX"
-    cd "$PCRE_SRC" || error_exit "Failed to enter dir: $PCRE_SRC"
-
-    ./configure --prefix=/usr
-    [ $? != 0 ] && error_exit "pcre configure err"
-
-    make
-    [ $? != 0 ] && error_exit "pcre make err"
-    make install
-    [ $? != 0 ] && error_exit "pcre install err"
-
-    # refresh active lib
-    ldconfig
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    rm -fr "$PCRE_SRC"
-
-    echo
-    echo "install pcre complete."
-    touch "$PCRE_LOCK"
-}
-
 # add nginx third module
 function add_module {
     echo "install module..."
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    git clone http://github.com/wandenberg/nginx-push-stream-module.git
+    git clone https://github.com/wandenberg/nginx-push-stream-module.git
     cd "$OPENRESTY_SRC" || error_exit "Failed to enter dir: $OPENRESTY_SRC"
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_SRC" --user=www --group=www \
+        --with-pcre2 \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \
@@ -132,7 +101,7 @@ function add_module {
 # install common dependency
 # nginx gzip depend zlib zlib-devel
 # nginx ssl depend openssl openssl-devel
-# nginx image_filter module denpend gd gd-devel
+# nginx image_filter module depend gd gd-devel
 # nginx user:group is www:www
 function install_common {
     [ -f "$COMMON_LOCK" ] && return
@@ -145,7 +114,7 @@ function install_common {
     echo "install dependency..."
     dnf install -y sudo wget gcc gcc-c++ make cmake autoconf automake \
         zlib zlib-devel openssl openssl-devel gd gd-devel \
-        telnet tcpdump ipset lsof iptables iptables-services
+        pcre2-devel perl-FindBin perl-File-Compare
     [ $? != 0 ] && error_exit "common dependence install err"
 
     # 创建专门运行 openresty 和 php-fpm 的系统用户和组
@@ -172,7 +141,6 @@ function install_common {
 function start_install {
     [ ! -d "$LOCK_DIR" ] && mkdir -p "$LOCK_DIR"
     install_common
-    install_pcre
     install_openresty
 }
 
