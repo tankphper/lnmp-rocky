@@ -10,10 +10,9 @@ PCRE_DOWN="https://ftp.pcre.org/pub/pcre/pcre-8.43.tar.gz"
 PCRE_SRC="pcre-8.43"
 PCRE_LOCK="$LOCK_DIR/pcre.lock"
 # openresty source
-OPENRESTY_VERSION="openresty-1.27.1.2"
-OPENRESTY_FILE="$OPENRESTY_VERSION$SRC_SUFFIX"
-OPENRESTY_DOWN="https://openresty.org/download/$OPENRESTY_FILE"
-OPENRESTY_DIR="$INSTALL_DIR/$OPENRESTY_VERSION"
+OPENRESTY_DOWN="https://openresty.org/download/openresty-1.27.1.2.tar.gz"
+OPENRESTY_SRC="openresty-1.27.1.2"
+OPENRESTY_DIR="$OPENRESTY_SRC"
 OPENRESTY_LOCK="$LOCK_DIR/openresty.lock"
 # common dependency fo nginx
 COMMON_LOCK="$LOCK_DIR/openresty.common.lock"
@@ -24,13 +23,14 @@ function install_openresty {
      
     echo "install openresty..."
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$OPENRESTY_FILE" ] && wget "$OPENRESTY_DOWN"
-    tar -zxvf "$OPENRESTY_FILE"
-    cd "$OPENRESTY_VERSION" || error_exit "Failed to enter dir: $OPENRESTY_VERSION"
+    [ ! -f "$OPENRESTY_SRC$SRC_SUFFIX" ] && wget "$OPENRESTY_DOWN"
+    tar -zxvf "$OPENRESTY_SRC$SRC_SUFFIX"
+    cd "$OPENRESTY_SRC" || error_exit "Failed to enter dir: $OPENRESTY_SRC"
     make clean > /dev/null 2>&1
 
-    sed -i "s@CFLAGS=\"$CFLAGS -g"@#CFLAGS="$CFLAGS -g\"@" auto/cc/gcc
-    ./configure --user=www --group=www --prefix=$OPENRESTY_DIR \
+    sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
+    ./configure \
+        --prefix="$INSTALL_DIR/$OPENRESTY_SRC" --user=www --group=www \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \
@@ -47,18 +47,18 @@ function install_openresty {
     make install
     [ $? != 0 ] && error_exit "openresty install err"
 
-    mkdir -p $OPENRESTY_DIR/nginx/conf/{vhost,rewrite}
-    [ -L $INSTALL_DIR/nginx ] && rm -fr $INSTALL_DIR/nginx
-    ln -sf $OPENRESTY_DIR/nginx $INSTALL_DIR/nginx
-    ln -sf $OPENRESTY_DIR/nginx/sbin/nginx /usr/local/bin/nginx
+    mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/{vhost,rewrite}"
+    [ -L "$INSTALL_DIR/nginx" ] && rm -fr "$INSTALL_DIR/nginx"
+    ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx" "$INSTALL_DIR/nginx"
+    ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx/sbin/nginx" /usr/local/bin/nginx
     # default web dir
     [ ! -d /www/web ] && mkdir -p /www/web
-    #[ -d /www/web ] && chown -h www:www /www/web
-    # cp default conf and tp rewrite rule 
-    cp -f $ROOT/nginx.conf/nginx.conf $OPENRESTY_DIR/nginx/conf/nginx.conf
-    cp -f $ROOT/nginx.conf/rule.conf $OPENRESTY_DIR/nginx/conf/rewrite/rule.conf
-    # auto start script for Centos 7 and Centos 8
-    cp -f $ROOT/nginx.conf/nginx.init.R7 /usr/lib/systemd/system/nginxd.service
+    # cp default conf and tp rewrite rule
+    cp -f "$ROOT/nginx.conf/nginx.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/nginx.conf"
+    cp -f "$ROOT/nginx.conf/rule.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite/rule.conf"
+
+    # 复制静态 Systemd 模板，并赋予标准读取权限
+    cp -f "$ROOT/nginx.conf/nginxd.service" /etc/systemd/system/nginxd.service
 
     # 注册并启动 Systemd 服务
     systemctl daemon-reload
@@ -105,9 +105,9 @@ function add_module {
     echo "install module..."
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     git clone http://github.com/wandenberg/nginx-push-stream-module.git
-    cd "$OPENRESTY_VERSION" || error_exit "Failed to enter dir: $OPENRESTY_VERSION"
+    cd "$OPENRESTY_SRC" || error_exit "Failed to enter dir: $OPENRESTY_SRC"
     ./configure \
-        --user=www --group=www --prefix="$OPENRESTY_DIR" \
+        --prefix="$INSTALL_DIR/$OPENRESTY_SRC" --user=www --group=www \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \

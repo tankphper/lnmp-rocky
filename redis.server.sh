@@ -45,7 +45,7 @@ function install_redis {
     # systemctl require redis run non-daemonised
     sed -i 's@^daemonize yes@daemonize no@' $CONF_DIR/redis.conf
     # auto start script for Centos 7 and Centos 8
-    cp $ROOT/redis.server.conf/redis.init.R7 /etc/systemd/system/redis.service
+    cp "$ROOT/redis.server.conf/redis.service" /etc/systemd/system/redis.service
 
     # 注册并启动 Systemd 服务
     systemctl daemon-reload
