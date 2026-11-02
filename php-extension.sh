@@ -1,18 +1,14 @@
 . ./common.sh
 
 SRC_DIR="$ROOT/src"
-LOCK_DIR="$ROOT/lock"
-SRC_SUFFIX=".tar.gz"
-EXT_VER=${2:-""}
-PHP_VER=$(php-config --version)
+PHP_VERSION=$(php-config --version)
+PHP_PREFIX=$(php-config --prefix)
 PHP_API_VER=$(phpize --version | awk '/PHP Api Version/ {print $NF}')
 PHP_EXT_DIR=$(php-config --extension-dir)
-PHP_PREFIX=$(php-config --prefix)
 
-echo "PHP_VER: $PHP_VER"
+echo "PHP_VERSION: $PHP_VERSION"
 echo "PHP_API_VER: $PHP_API_VER"
 echo "PHP_EXT_DIR: $PHP_EXT_DIR"
-echo "EXT_VER: $EXT_VER"
 
 # add extension file to php.ini
 # 完美对齐多版本 php.d 动态扫描规范，且全量双引号加固
@@ -25,7 +21,7 @@ function echo_ini {
 # --enable-async-redis require hiredis library supported
 # --enable-http2 require nghttp2 library supported
 function add_swoole {
-    local SWOOLE_VER=${EXT_VER:-"4.5.10"}
+    local SWOOLE_VER=${2:-"4.5.10"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "swoole.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz" -O "swoole.tar.gz"
@@ -37,7 +33,7 @@ function add_swoole {
 
     phpize
     ./configure \
-        --with-php-config="/www/server/php-$PHP_VER/bin/php-config" \
+        --with-php-config="$PHP_PREFIX/bin/php-config" \
         --enable-openssl \
         --enable-async-redis \
         --enable-http2 \
@@ -60,7 +56,7 @@ function add_swoole {
 
 # some cocos game use protobuf api
 function add_protobuf {
-    local PROTOBUF_VER=${EXT_VER:-"3.14.0"}
+    local PROTOBUF_VER=${2:-"3.14.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "protobuf.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz" -O "protobuf.tar.gz"
@@ -71,7 +67,7 @@ function add_protobuf {
     cd "protobuf_build" || error_exit "Failed to enter dir: protobuf_build"
 
     phpize
-    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
+    ./configure --with-php-config="$PHP_PREFIX/bin/php-config"
     [ $? != 0 ] && error_exit "protobuf configure err"
 
     make
@@ -88,7 +84,7 @@ function add_protobuf {
 
 # phpredis-6.x or newer for PHP 8.3
 function add_redis {
-    local PHPREDIS_VER=${EXT_VER:-"6.1.0"}
+    local PHPREDIS_VER=${2:-"6.1.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "phpredis.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis.tar.gz"
@@ -99,7 +95,7 @@ function add_redis {
     cd "phpredis_build" || error_exit "Failed to enter dir: phpredis_build"
 
     phpize
-    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
+    ./configure --with-php-config="$PHP_PREFIX/bin/php-config"
     [ $? != 0 ] && error_exit "phpredis configure err"
 
     make -j "$(nproc)"
@@ -117,7 +113,7 @@ function add_redis {
 # php-7.2.x removed mcrypt
 # php --ri mcrypt will see version 2.5.8
 function add_mcrypt {
-    local MCRYPT_VER=${EXT_VER:-"1.0.4"}
+    local MCRYPT_VER=${2:-"1.0.4"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "phpmcrypt.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/mcrypt-$MCRYPT_VER.tgz" -O "phpmcrypt.tar.gz"
@@ -128,7 +124,7 @@ function add_mcrypt {
     cd "phpmcrypt_build" || error_exit "Failed to enter dir: phpmcrypt_build"
 
     phpize
-    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
+    ./configure --with-php-config="$PHP_PREFIX/bin/php-config"
     [ $? != 0 ] && error_exit "phpmcrypt configure err"
 
     make
@@ -145,7 +141,7 @@ function add_mcrypt {
 
 # php-7.x requried
 function add_xlswriter {
-    local XLSWRITER_VER=${EXT_VER:-"1.5.5"}
+    local XLSWRITER_VER=${2:-"1.5.5"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "xlswriter.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz" -O "xlswriter.tar.gz"
@@ -156,7 +152,7 @@ function add_xlswriter {
     cd "xlswriter_build" || error_exit "Failed to enter dir: xlswriter_build"
 
     phpize
-    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config" --enable-reader
+    ./configure --with-php-config="$PHP_PREFIX/bin/php-config" --enable-reader
     [ $? != 0 ] && error_exit "xlswriter configure err"
 
     make -j "$(nproc)"
