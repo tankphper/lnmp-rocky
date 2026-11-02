@@ -317,6 +317,8 @@ function install_libzip {
 # php user:group is www:www
 function install_common {
     [ -f "$COMMON_LOCK" ] && return
+
+    echo "install crb and epel..."
     # 启用 Rocky 9 的官方代码就绪库（CRB）和安装 EPEL 源
     # 很多如 oniguruma-devel 的高阶开发包都在这里面
     dnf config-manager --set-enabled crb >/dev/null 2>&1
