@@ -23,7 +23,7 @@ function install_openresty {
     make clean > /dev/null 2>&1
 
     # 关闭 Nginx 调试符号，缩减体积，提高运行效率
-    sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
+    sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" bundle/nginx-*/auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
         --with-pcre-jit \
@@ -101,7 +101,7 @@ function add_module {
     make clean > /dev/null 2>&1
 
     # 环境镜像同步：升级模块时同样关闭调试符号，保证二进制文件一致性
-    sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
+    sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" bundle/nginx-*/auto/cc/gcc
     ./configure \
         --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
         --with-pcre-jit \
