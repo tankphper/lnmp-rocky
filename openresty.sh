@@ -20,15 +20,16 @@ COMMON_LOCK="$LOCK_DIR/openresty.common.lock"
 
 # openresty install function
 function install_openresty {
-    [ -f $OPENRESTY_LOCK ] && return
+    [ -f "$OPENRESTY_LOCK" ] && return
      
     echo "install openresty..."
-    cd "$SRC_DIR"
-    [ ! -f $OPENRESTY_FILE ] && wget $OPENRESTY_DOWN
-    tar -zxvf $OPENRESTY_FILE
-    cd $OPENRESTY_VERSION
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
+    [ ! -f "$OPENRESTY_FILE" ] && wget "$OPENRESTY_DOWN"
+    tar -zxvf "$OPENRESTY_FILE"
+    cd "$OPENRESTY_VERSION" || error_exit "Failed to enter dir: $OPENRESTY_VERSION"
     make clean > /dev/null 2>&1
-    sed -i 's@CFLAGS="$CFLAGS -g"@#CFLAGS="$CFLAGS -g"@' auto/cc/gcc
+
+    sed -i "s@CFLAGS=\"$CFLAGS -g"@#CFLAGS="$CFLAGS -g\"@" auto/cc/gcc
     ./configure --user=www --group=www --prefix=$OPENRESTY_DIR \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
@@ -40,10 +41,12 @@ function install_openresty {
         --with-stream_ssl_module \
         --with-stream_ssl_preread_module
     [ $? != 0 ] && error_exit "openresty configure err"
-    make -j $CPUS
+
+    make -j "$(nproc)"
     [ $? != 0 ] && error_exit "openresty make err"
     make install
     [ $? != 0 ] && error_exit "openresty install err"
+
     mkdir -p $OPENRESTY_DIR/nginx/conf/{vhost,rewrite}
     [ -L $INSTALL_DIR/nginx ] && rm -fr $INSTALL_DIR/nginx
     ln -sf $OPENRESTY_DIR/nginx $INSTALL_DIR/nginx
@@ -54,62 +57,57 @@ function install_openresty {
     # cp default conf and tp rewrite rule 
     cp -f $ROOT/nginx.conf/nginx.conf $OPENRESTY_DIR/nginx/conf/nginx.conf
     cp -f $ROOT/nginx.conf/rule.conf $OPENRESTY_DIR/nginx/conf/rewrite/rule.conf
-    if [ $VERS -ge 7 ]; then
-        # auto start script for Centos 7 and Centos 8
-        cp -f $ROOT/nginx.conf/nginx.init.R7 /usr/lib/systemd/system/nginxd.service
-        systemctl daemon-reload
-        systemctl start nginxd.service
-        # auto start when start system 
-        systemctl enable nginxd.service
-    else
-        # auto start script for Centos 6
-        cp -f $ROOT/nginx.conf/nginx.init.R6 /etc/init.d/nginxd
-        chmod +x /etc/init.d/nginxd
-        # auto start when start system
-        chkconfig --add nginxd
-        chkconfig --level 35 nginxd on
-        service nginxd start
-    fi
-    
+    # auto start script for Centos 7 and Centos 8
+    cp -f $ROOT/nginx.conf/nginx.init.R7 /usr/lib/systemd/system/nginxd.service
+
+    # 注册并启动 Systemd 服务
+    systemctl daemon-reload
+    systemctl enable nginxd
+    systemctl start nginxd
+
     echo  
     echo "install openresty complete."
-    touch $OPENRESTY_LOCK
+    touch "$OPENRESTY_LOCK"
 }
 
 # pcre install function
 # nginx rewrite depend pcre
 # pcre_dir=/usr
 function install_pcre {
-    [ -f $PCRE_LOCK ] && return
+    [ -f "$PCRE_LOCK" ] && return
 
     echo "install pcre..."
-    cd "$SRC_DIR"
-    [ ! -f $PCRE_SRC$SRC_SUFFIX ] && wget $PCRE_DOWN
-    tar -zxvf $PCRE_SRC$SRC_SUFFIX
-    cd $PCRE_SRC
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
+    [ ! -f "$PCRE_SRC$SRC_SUFFIX" ] && wget "$PCRE_DOWN"
+    tar -zxvf "$PCRE_SRC$SRC_SUFFIX"
+    cd "$PCRE_SRC" || error_exit "Failed to enter dir: $PCRE_SRC"
+
     ./configure --prefix=/usr
     [ $? != 0 ] && error_exit "pcre configure err"
+
     make
     [ $? != 0 ] && error_exit "pcre make err"
     make install
     [ $? != 0 ] && error_exit "pcre install err"
+
     # refresh active lib
     ldconfig
-    cd "$SRC_DIR"
-    rm -fr $PCRE_SRC
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
+    rm -fr "$PCRE_SRC"
 
     echo
     echo "install pcre complete."
-    touch $PCRE_LOCK
+    touch "$PCRE_LOCK"
 }
 
 # add nginx third module
 function add_module {
     echo "install module..."
-    cd "$SRC_DIR"
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     git clone http://github.com/wandenberg/nginx-push-stream-module.git
-    cd $OPENRESTY_VERSION
-    ./configure --user=www --group=www --prefix=$OPENRESTY_DIR \
+    cd "$OPENRESTY_VERSION" || error_exit "Failed to enter dir: $OPENRESTY_VERSION"
+    ./configure \
+        --user=www --group=www --prefix="$OPENRESTY_DIR" \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
         --with-http_realip_module \
@@ -121,10 +119,12 @@ function add_module {
         --with-stream_ssl_preread_module \
         --add-module=../nginx-push-stream-module
     [ $? != 0 ] && error_exit "openresty configure err"
-    make -j $(nproc)
+
+    make -j "$(nproc)"
     [ $? != 0 ] && error_exit "openresty make err"
     make install
     [ $? != 0 ] && error_exit "openresty install err"
+
     echo  
     echo "add module complete."
 }
@@ -136,22 +136,31 @@ function add_module {
 # nginx user:group is www:www
 function install_common {
     [ -f "$COMMON_LOCK" ] && return
-    # iptables-services for Centos 7 and Centos 8
+    # 启用 Rocky 9 的官方代码就绪库（CRB）和安装 EPEL 源
+    dnf install -y epel-release >/dev/null 2>&1
+    dnf config-manager --set-enabled crb >/dev/null 2>&1
+    # 强行刷新 DNF 缓存，确保系统能够立刻识别来自 EPEL 的高级开发包
+    dnf makecache >/dev/null 2>&1
+
+    echo "install dependency..."
     dnf install -y sudo wget gcc gcc-c++ make cmake autoconf automake \
         zlib zlib-devel openssl openssl-devel gd gd-devel \
         telnet tcpdump ipset lsof iptables iptables-services
     [ $? != 0 ] && error_exit "common dependence install err"
-    # create user for nginx and php
-    #groupadd -g 1000 www > /dev/null 2>&1
+
+    # 创建专门运行 openresty 和 php-fpm 的系统用户和组
+    # 检查 www 用户是否存在，不存在则精准创建
+    if ! getent passwd www >/dev/null 2>&1; then
+        useradd -U -d /dev/null -s /sbin/nologin -M www > /dev/null 2>&1
+    fi
     # -d to set user home_dir=/www
     # -s to set user login shell=/sbin/nologin, you also to set /bin/bash
-    #useradd -g 1000 -u 1000 -d /www -s /sbin/nologin www > /dev/null 2>&1
-    
-    # -U create a group with the same name as the user. so it can instead groupadd and useradd
-    useradd -U -d /www -s /sbin/nologin www > /dev/null 2>&1
-    # set local timezone
-    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-    # syn hardware time to system time
+
+    # 强制让 chrony 立即同步网络时间
+    chronyc -a makestep
+    # 将系统时区改为上海
+    timedatectl set-timezone Asia/Shanghai
+    # 将准确的系统时间写入硬件时钟
     hwclock -w
    
     echo 
