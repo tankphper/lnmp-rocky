@@ -6,8 +6,7 @@ SRC_DIR="$ROOT/src"
 SRC_SUFFIX=".tar.gz"
 # openresty source
 OPENRESTY_DOWN="https://openresty.org/download/openresty-1.27.1.2.tar.gz"
-OPENRESTY_SRC="openresty-1.27.1.2"
-OPENRESTY_DIR="$OPENRESTY_SRC"
+OPENRESTY_DIR="openresty-1.27.1.2"
 OPENRESTY_LOCK="$LOCK_DIR/openresty.lock"
 # common dependency fo nginx
 COMMON_LOCK="$LOCK_DIR/openresty.common.lock"
@@ -18,14 +17,14 @@ function install_openresty {
      
     echo "install openresty..."
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$OPENRESTY_SRC$SRC_SUFFIX" ] && wget "$OPENRESTY_DOWN"
-    tar -zxvf "$OPENRESTY_SRC$SRC_SUFFIX"
-    cd "$OPENRESTY_SRC" || error_exit "Failed to enter dir: $OPENRESTY_SRC"
+    [ ! -f "$OPENRESTY_DIR$SRC_SUFFIX" ] && wget "$OPENRESTY_DOWN"
+    tar -zxvf "$OPENRESTY_DIR$SRC_SUFFIX"
+    cd "$OPENRESTY_DIR" || error_exit "Failed to enter dir: $OPENRESTY_DIR"
     make clean > /dev/null 2>&1
 
     sed -i "s@CFLAGS=\"$CFLAGS -g\"@#CFLAGS=\"$CFLAGS -g\"@" auto/cc/gcc
     ./configure \
-        --prefix="$INSTALL_DIR/$OPENRESTY_SRC" --user=www --group=www \
+        --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
         --with-pcre2 \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
@@ -73,9 +72,9 @@ function add_module {
     echo "install module..."
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     git clone https://github.com/wandenberg/nginx-push-stream-module.git
-    cd "$OPENRESTY_SRC" || error_exit "Failed to enter dir: $OPENRESTY_SRC"
+    cd "$OPENRESTY_DIR" || error_exit "Failed to enter dir: $OPENRESTY_DIR"
     ./configure \
-        --prefix="$INSTALL_DIR/$OPENRESTY_SRC" --user=www --group=www \
+        --prefix="$INSTALL_DIR/$OPENRESTY_DIR" --user=www --group=www \
         --with-pcre2 \
         --with-http_stub_status_module \
         --with-http_gzip_static_module \
