@@ -11,8 +11,7 @@ LOCK_DIR="$ROOT/lock"
 SRC_SUFFIX=".tar.gz"
 # php source
 PHP_DOWN="http://hk1.php.net/distributions/php-$PHP_VERSION.tar.gz"
-PHP_SRC="php-$PHP_VERSION"
-PHP_DIR="$PHP_SRC"
+PHP_DIR="php-$PHP_VERSION"
 PHP_LOCK="$LOCK_DIR/php.lock"
 # dependency of php
 ICONV_DOWN="http://ftp.gnu.org/gnu/libiconv/libiconv-1.16.tar.gz"
@@ -47,9 +46,9 @@ function install_php {
     echo "install php..."
 
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$PHP_SRC$SRC_SUFFIX" ] && wget --no-check-certificate "$PHP_DOWN"
-    tar -zxvf "$PHP_SRC$SRC_SUFFIX"
-    cd "$PHP_SRC" || error_exit "Failed to enter dir: $PHP_SRC"
+    [ ! -f "$PHP_DIR$SRC_SUFFIX" ] && wget --no-check-certificate "$PHP_DOWN"
+    tar -zxvf "$PHP_DIR$SRC_SUFFIX"
+    cd "$PHP_DIR" || error_exit "Failed to enter dir: $PHP_DIR"
 
     make clean > /dev/null 2>&1
 
@@ -113,18 +112,22 @@ function install_php {
 
     # 复制并初始化 php.ini 基础配置
     cp -f php.ini-production "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
-    sed -i 's#^;date.timezone =.*#date.timezone = Asia/Shanghai#' "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
+    sed -i 's@^;date.timezone =.*@date.timezone = Asia/Shanghai@' "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
     sed -i "s@^display_errors =.*@display_errors = Off@" "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
     sed -i "s@^log_errors =.*@log_errors = On@" "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
     sed -i "s@^;error_log = php_errors.log.*@error_log = /www/logs/php/php.error.log@" "$INSTALL_DIR/$PHP_DIR/etc/php.ini"
 
     # 复制并初始化 php-fpm 基础配置
     cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
-    sed -i "s#^;pid = run/php-fpm.pid#pid = run/php-fpm.pid#" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
-    sed -i "s#^;error_log =.*#error_log = /www/logs/php/php-fpm.error.log#" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
+    sed -i "s@^;pid = run/php-fpm.pid@pid = run/php-fpm.pid@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
+    sed -i "s@^;error_log =.*@error_log = /www/logs/php/php-fpm.error.log@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.conf"
 
     # 复制并初始化 www.conf 基础配置
     cp -f "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf.default" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^listen =.*@listen = /dev/shm/php-cgi.sock@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^;listen.owner =.*@listen.owner = www@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^;listen.group =.*@listen.group = www@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
+    sed -i "s@^;listen.mode =.*@listen.mode = 0660@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
     sed -i "s@^;slowlog =.*@slowlog = /www/logs/php/php-fpm.slow.log@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
     sed -i "s@^;request_slowlog_timeout =.*@request_slowlog_timeout = 5s@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"
     sed -i "s@^;catch_workers_output =.*@catch_workers_output = yes@" "$INSTALL_DIR/$PHP_DIR/etc/php-fpm.d/www.conf"

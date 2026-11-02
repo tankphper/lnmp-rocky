@@ -6,21 +6,8 @@ SRC_DIR="$ROOT/src"
 SRC_SUFFIX=".tar.gz"
 # mysql source
 MYSQL_DOWN="https://cdn.mysql.com/archives/mysql-8.0/mysql-8.0.40.tar.gz"
-MYSQL_SRC="mysql-8.0.40"
-MYSQL_DIR="$MYSQL_SRC"
+MYSQL_DIR="mysql-8.0.40"
 MYSQL_LOCK="$LOCK_DIR/mysql.lock"
-# cmake tool source
-CMAKE_DOWN="https://cmake.org/files/v3.19/cmake-3.19.2.tar.gz"
-CMAKE_SRC="cmake-3.19.2"
-CMAKE_LOCK="$LOCK_DIR/mysql.cmake.lock"
-# 1.72.0 for mysql 8.0.x
-BOOST_DOWN="https://gitlab.com/lnmp-shell/lnmp-files/-/raw/master/boost_1_72_0.tar.gz"
-BOOST_SRC="boost_1_72_0"
-BOOST_LOCK="$LOCK_DIR/mysql.boost.lock"
-# mysql-8.0.x require rpcgen
-RPCGEN_DOWN="https://github.com/thkukuk/rpcsvc-proto/releases/download/v1.4.2/rpcsvc-proto-1.4.2.tar.xz"
-RPCGEN_SRC="rpcsvc-proto-1.4.2"
-RPCGEN_LOCK="$LOCK_DIR/mysql.rpcgen.lock"
 # common dependency for mysql
 COMMON_LOCK="$LOCK_DIR/mysql.common.lock"
 
@@ -32,9 +19,9 @@ function install_mysql {
     echo "install mysql..."
 
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$MYSQL_SRC$SRC_SUFFIX" ] && wget "$MYSQL_DOWN"
-    tar -zxvf "$MYSQL_SRC$SRC_SUFFIX"
-    cd "$MYSQL_SRC" || error_exit "Failed to enter dir: $MYSQL_SRC"
+    [ ! -f "$MYSQL_DIR$SRC_SUFFIX" ] && wget "$MYSQL_DOWN"
+    tar -zxvf "$MYSQL_DIR$SRC_SUFFIX"
+    cd "$MYSQL_DIR" || error_exit "Failed to enter dir: $MYSQL_DIR"
 
     # 创建并进入独立的编译目录（规避污染，方便重试）
     mkdir -p build
@@ -68,7 +55,7 @@ function install_mysql {
     cd .. || error_exit "Failed to return to mysql source root directory"
 
     # 建立多版本公共软链接
-    ln -sf "$INSTALL_DIR/$MYSQL_SRC" "$INSTALL_DIR/mysql"
+    ln -sf "$INSTALL_DIR/$MYSQL_DIR" "$INSTALL_DIR/mysql"
 
     # 将全局快捷命令安全注入自定义用户 bin 目录下
     ln -sf "$INSTALL_DIR/mysql/bin/mysql" /usr/local/bin/mysql
@@ -128,74 +115,8 @@ function install_mysql {
     touch "$MYSQL_LOCK"
 }
 
-# cmake install function
-# mysql depend cmake to compile
-# cmake_dir=/usr
-function install_cmake {
-    [ -f "$CMAKE_LOCK" ] && return
-
-    echo "install cmake..."
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$CMAKE_SRC$SRC_SUFFIX" ] && wget "$CMAKE_DOWN"
-    tar -zxvf "$CMAKE_SRC$SRC_SUFFIX"
-    cd "$CMAKE_SRC" || error_exit "Failed to enter dir: $CMAKE_SRC"
-    ./bootstrap --prefix=/usr
-    [ $? != 0 ] && error_exit "cmake configure err"
-    make
-    [ $? != 0 ] && error_exit "cmake make err"
-    make install
-    [ $? != 0 ] && error_exit "cmake install err"
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    rm -fr "$CMAKE_SRC"
-
-    echo
-    echo "install cmake complete."
-    touch "$CMAKE_LOCK"
-}
-
-# boost install function
-# mysql depend boost library
-# cmake option -DDOWNLOAD_BOOST=1 and it will download boost auto
-function install_boost {
-    [ -f "$BOOST_LOCK" ] && return
-
-    echo "install boost..."
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f "$BOOST_SRC$SRC_SUFFIX" ] && wget "$BOOST_DOWN"
-    tar -zxvf "$BOOST_SRC$SRC_SUFFIX"
-    rm -fr "$BOOST_SRC$SRC_SUFFIX"
-
-    echo
-    echo "install boost complete."
-    touch "$BOOST_LOCK"
-}
-
-# mysql-8.0.x require rpcgen
-function install_rpcgen {
-    [ -f "$RPCGEN_LOCK" ] && return
-
-    echo "install rcpgen..."
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    wget "$RPCGEN_DOWN"
-    xz -d "$RPCGEN_SRC.tar.xz"
-    tar -xvf "$RPCGEN_SRC.tar"
-    cd "$RPCGEN_SRC" || error_exit "Failed to enter dir: $RPCGEN_SRC"
-    ./configure
-    [ $? != 0 ] && error_exit "rpcgen configure err"
-    make
-    [ $? != 0 ] && error_exit "rpcgen make err"
-    make install
-    [ $? != 0 ] && error_exit "rpcgen install err"
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    rm -fr "$RPCGEN_SRC"
-
-    echo
-    echo "install rpcgen complete."
-    touch "$RPCGEN_LOCK"
-}
-
 # install common dependency
-# mysql 8.0.x compile require boost default dir=/usr/share/doc/boost-1.72.0
+# mysql 8.0.x compile require boost
 # mysql 8.0.x require gcc 5.3 or newer
 # remove system default cmake
 # mysql user:group is mysql:mysql
