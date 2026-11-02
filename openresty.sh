@@ -56,7 +56,7 @@ function configure_openresty {
     echo "configure openresty..."
 
     # 显式分离创建子目录，规避非交互式 Shell 花括号扩展不解析的地雷
-    mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/vhost"
+    mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/vhost/common"
     mkdir -p "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite"
 
     # 使用 rm -f 只删除软链接本身，绝不使用 -r 递归，彻底规避原文件被抹除的灾难
@@ -69,6 +69,7 @@ function configure_openresty {
     # 复制配置文件和伪静态文件模板
     cp -f "$ROOT/nginx.conf/nginx.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/nginx.conf"
     cp -f "$ROOT/nginx.conf/rule.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite/rule.conf"
+    cp -f "$ROOT/nginx.conf/app.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/vhost/common/app.conf"
 
     # 复制静态 Systemd 模板，并赋予标准可读权限
     cp -f "$ROOT/nginx.conf/nginxd.service" /etc/systemd/system/nginxd.service
