@@ -35,6 +35,7 @@ function install_mysql {
     [ ! -f "$MYSQL_SRC$SRC_SUFFIX" ] && wget "$MYSQL_DOWN"
     tar -zxvf "$MYSQL_SRC$SRC_SUFFIX"
     cd "$MYSQL_SRC" || error_exit "Failed to enter dir: $MYSQL_SRC"
+
     # 创建并进入独立的编译目录（规避污染，方便重试）
     mkdir -p build
     cd build || error_exit "Failed to enter build directory"
