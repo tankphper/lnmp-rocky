@@ -1,5 +1,5 @@
 ROOT=$(pwd)
-CPUS=`grep processor /proc/cpuinfo | wc -l`
+CPUS=$(grep -c processor /proc/cpuinfo)
 grep -q "release 7" /etc/redhat-release && VERS=7 || VERS=0
 grep -q "release 8" /etc/redhat-release && VERS=8
 grep -q "release 9" /etc/redhat-release && VERS=9
@@ -18,9 +18,10 @@ function version_lt() { test "$(echo "$@" | tr " " "\n" | sort -rV | head -n 1)"
 
 # install error function
 function error_exit {
-    echo
-    echo
-    echo "Install error :$1--------"
-    echo
-    exit
+    echo >&2
+    # 使用红色高显字体打印错误文本
+    echo -e "\033[31m[ERROR] $1\033[0m" >&2
+    echo >&2
+    # 返回 1 状态码，确保全自动化流水线收到明确的失败熔断信号
+    exit 1
 }
