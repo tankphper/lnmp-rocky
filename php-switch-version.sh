@@ -7,7 +7,7 @@ if [ -z "$PHP_SWT_VER" ]; then
 fi
 
 # 获取旧版本号
-PHP_OLD_VER=$(php-config --version)
+PHP_OLD_VER=$("/www/server/php/bin/php-config" --version)
 
 # 检查目标要切换的 PHP 物理目录是否存在，不存在则当场熔断，防止指错死链接
 if [ ! -d "/www/server/php-$PHP_SWT_VER" ]; then
@@ -27,7 +27,7 @@ systemctl restart php-fpm
 [ $? != 0 ] && error_exit "php-fpm 服务重启可能遇到了阻碍，请检查 systemctl status php-fpm"
 
 # 获取新版本号
-PHP_NEW_VER=$(php-config --version)
+PHP_NEW_VER=$("/www/server/php/bin/php-config" --version)
 
 echo "=================================================="
 echo "PHP 新版本切换成功"
