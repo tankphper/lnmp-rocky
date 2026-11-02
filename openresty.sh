@@ -48,14 +48,14 @@ function install_openresty {
     [ -L "$INSTALL_DIR/nginx" ] && rm -r "$INSTALL_DIR/nginx"
     ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx" "$INSTALL_DIR/nginx"
     ln -sf "$INSTALL_DIR/$OPENRESTY_DIR/nginx/sbin/nginx" /usr/local/bin/nginx
-    # 创建 WEB 目录
-    [ ! -d /www/web ] && mkdir -p /www/web
+    
     # 复制配置文件和伪静态文件模板
     cp -f "$ROOT/nginx.conf/nginx.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/nginx.conf"
     cp -f "$ROOT/nginx.conf/rule.conf" "$INSTALL_DIR/$OPENRESTY_DIR/nginx/conf/rewrite/rule.conf"
 
     # 复制静态 Systemd 模板，并赋予标准读取权限
     cp -f "$ROOT/nginx.conf/nginxd.service" /etc/systemd/system/nginxd.service
+    chmod 644 /etc/systemd/system/nginxd.service
 
     # 注册并启动 Systemd 服务
     systemctl daemon-reload
