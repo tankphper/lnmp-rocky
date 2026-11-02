@@ -26,14 +26,15 @@ function echo_ini {
 # --enable-http2 require nghttp2 library supported
 function add_swoole {
     local SWOOLE_VER=${EXT_VER:-"4.5.10"}
-    cd $SRC_DIR
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     [ ! -f swoole.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz -O swoole.tar.gz
     [ ! -f swoole ] && mkdir swoole
     tar -zxvf swoole.tar.gz -C swoole --strip-components=1
-    cd swoole
+    cd swoole || error_exit "Failed to enter dir: swoole"
+
     phpize
     ./configure \
-        --with-php-config=/www/server/php-$PHP_VER/bin/php-config \
+        --with-php-config="/www/server/php-$PHP_VER/bin/php-config" \
         --enable-openssl \
         --enable-async-redis \
         --enable-http2 \
@@ -41,28 +42,33 @@ function add_swoole {
         --enable-coroutine \
         --enable-sockets
     [ $? != 0 ] && error_exit "swoole configure err"
+
     make
     [ $? != 0 ] && error_exit "swoole make err"
     make install
     [ $? != 0 ] && error_exit "swoole make install err"
+
     echo_ini swoole
 }
 
 # some cocos game use protobuf api
 function add_protobuf {
     local PROTOBUF_VER=${EXT_VER:-"3.14.0"}
-    cd $SRC_DIR
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
     [ ! -f protobuf.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz -O protobuf.tar.gz
     [ ! -f protobuf ] && mkdir protobuf
     tar -zxvf protobuf.tar.gz -C protobuf --strip-components=1
-    cd protobuf
+    cd protobuf || error_exit "Failed to enter dir: protobuf"
+
     phpize
-    ./configure --with-php-config=/www/server/php-$PHP_VER/bin/php-config
+    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
     [ $? != 0 ] && error_exit "protobuf configure err"
+
     make
     [ $? != 0 ] && error_exit "protobuf make err"
     make install
     [ $? != 0 ] && error_exit "protobuf make install err"
+
     echo_ini protobuf
 }
 
@@ -70,18 +76,21 @@ function add_protobuf {
 # phpredis-5.x or newer drop PHP 5 support
 function add_redis {
     local PHPREDIS_VER=${EXT_VER:-"5.3.2"}
-    cd $SRC_DIR
+    cd $SRC_DIR || error_exit "Failed to enter dir: $SRC_DIR"
     [ ! -f phpredis.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/redis-$PHPREDIS_VER.tgz -O phpredis.tar.gz
     [ ! -f phpredis ] && mkdir phpredis
     tar -zxvf phpredis.tar.gz -C phpredis --strip-components=1
-    cd phpredis
+    cd phpredis || error_exit "Failed to enter dir: phpredis"
+
     phpize
-    ./configure --with-php-config=/www/server/php-$PHP_VER/bin/php-config
+    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
     [ $? != 0 ] && error_exit "phpredis configure err"
+
     make
     [ $? != 0 ] && error_exit "phpredis make err"
     make install
     [ $? != 0 ] && error_exit "phpredis make install err"
+
     echo_ini redis
 }
 
@@ -89,29 +98,33 @@ function add_redis {
 # php --ri mcrypt will see version 2.5.8
 function add_mcrypt {
     local MCRYPT_VER=${EXT_VER:-"1.0.4"}
-    cd $SRC_DIR
+    cd $SRC_DIR || error_exit "Failed to enter dir: $SRC_DIR"
     [ ! -f phpmcrypt.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/mcrypt-$MCRYPT_VER.tgz -O phpmcrypt.tar.gz
     [ ! -d phpmcrypt ] && mkdir phpmcrypt
     tar -zxvf phpmcrypt.tar.gz -C phpmcrypt --strip-components=1
-    cd phpmcrypt
+    cd phpmcrypt || error_exit "Failed to enter dir: phpmcrypt"
+
     phpize
-    ./configure --with-php-config=/www/server/php-$PHP_VER/bin/php-config
+    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
     [ $? != 0 ] && error_exit "phpmcrypt configure err"
+
     make
     [ $? != 0 ] && error_exit "phpmcrypt make err"
     make install
     [ $? != 0 ] && error_exit "phpmcrypt make install err"
+
     echo_ini mcrypt
 }
 
 # php-7.x requried
 function add_xlswriter {
     local XLSWRITER_VER=${EXT_VER:-"1.5.5"}
-    cd $SRC_DIR
+    cd $SRC_DIR || error_exit "Failed to enter dir: $SRC_DIR"
     [ ! -f xlswriter.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz -O xlswriter.tar.gz
     [ ! -d xlswriter ] && mkdir xlswriter
     tar -zxvf xlswriter.tar.gz -C xlswriter --strip-components=1
-    cd xlswriter
+    cd xlswriter || error_exit "Failed to enter dir: xlswriter"
+
     phpize
     ./configure --with-php-config=/www/server/php-$PHP_VER/bin/php-config --enable-reader
     [ $? != 0 ] && error_exit "xlswriter configure err"
