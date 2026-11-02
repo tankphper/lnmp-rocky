@@ -27,10 +27,13 @@ function echo_ini {
 function add_swoole {
     local SWOOLE_VER=${EXT_VER:-"4.5.10"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f swoole.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz -O swoole.tar.gz
-    [ ! -f swoole ] && mkdir swoole
-    tar -zxvf swoole.tar.gz -C swoole --strip-components=1
-    cd swoole || error_exit "Failed to enter dir: swoole"
+
+    [ ! -f "swoole.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz" -O "swoole.tar.gz"
+    # 清理并建立干净的编译临时区
+    [ -d "swoole_build" ] && rm -rf "swoole_build"
+    mkdir "swoole_build"
+    tar -zxvf "swoole.tar.gz" -C "swoole_build" --strip-components=1
+    cd "swoole_build" || error_exit "Failed to enter dir: swoole_build"
 
     phpize
     ./configure \
@@ -49,16 +52,23 @@ function add_swoole {
     [ $? != 0 ] && error_exit "swoole make install err"
 
     echo_ini swoole
+
+    # 清理临时编译温床
+    cd "$SRC_DIR" && rm -rf "swoole_build"
+    echo "swoole-$PROTOBUF_VER installation complete."
 }
 
 # some cocos game use protobuf api
 function add_protobuf {
     local PROTOBUF_VER=${EXT_VER:-"3.14.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f protobuf.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz -O protobuf.tar.gz
-    [ ! -f protobuf ] && mkdir protobuf
-    tar -zxvf protobuf.tar.gz -C protobuf --strip-components=1
-    cd protobuf || error_exit "Failed to enter dir: protobuf"
+
+    [ ! -f "protobuf.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz" -O "protobuf.tar.gz"
+    # 清理并建立干净的编译临时区
+    [ -d "protobuf_build" ] && rm -rf "protobuf_build"
+    mkdir "protobuf_build"
+    tar -zxvf "protobuf.tar.gz" -C "protobuf_build" --strip-components=1
+    cd "protobuf_build" || error_exit "Failed to enter dir: protobuf_build"
 
     phpize
     ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
@@ -70,28 +80,38 @@ function add_protobuf {
     [ $? != 0 ] && error_exit "protobuf make install err"
 
     echo_ini protobuf
+
+    # 清理临时编译温床
+    cd "$SRC_DIR" && rm -rf "protobuf_build"
+    echo "protobuf-$PROTOBUF_VER installation complete."
 }
 
-# phpredis-4.3.0 is the latest release with PHP 5 suport
-# phpredis-5.x or newer drop PHP 5 support
+# phpredis-6.x or newer for PHP 8.3
 function add_redis {
-    local PHPREDIS_VER=${EXT_VER:-"5.3.2"}
+    local PHPREDIS_VER=${EXT_VER:-"6.1.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f phpredis.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/redis-$PHPREDIS_VER.tgz -O phpredis.tar.gz
-    [ ! -f phpredis ] && mkdir phpredis
-    tar -zxvf phpredis.tar.gz -C phpredis --strip-components=1
-    cd phpredis || error_exit "Failed to enter dir: phpredis"
+
+    [ ! -f "phpredis.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis.tar.gz"
+    # 清理并建立干净的编译临时区
+    [ -d "phpredis_build" ] && rm -rf "phpredis_build"
+    mkdir "phpredis_build"
+    tar -zxvf "phpredis.tar.gz" -C "phpredis_build" --strip-components=1
+    cd "phpredis_build" || error_exit "Failed to enter dir: phpredis_build"
 
     phpize
     ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
     [ $? != 0 ] && error_exit "phpredis configure err"
 
-    make
+    make -j "$(nproc)"
     [ $? != 0 ] && error_exit "phpredis make err"
     make install
     [ $? != 0 ] && error_exit "phpredis make install err"
 
     echo_ini redis
+
+    # 清理临时编译温床
+    cd "$SRC_DIR" && rm -rf "phpredis_build"
+    echo "phpredis-$PHPREDIS_VER installation complete."
 }
 
 # php-7.2.x removed mcrypt
@@ -99,10 +119,13 @@ function add_redis {
 function add_mcrypt {
     local MCRYPT_VER=${EXT_VER:-"1.0.4"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f phpmcrypt.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/mcrypt-$MCRYPT_VER.tgz -O phpmcrypt.tar.gz
-    [ ! -d phpmcrypt ] && mkdir phpmcrypt
-    tar -zxvf phpmcrypt.tar.gz -C phpmcrypt --strip-components=1
-    cd phpmcrypt || error_exit "Failed to enter dir: phpmcrypt"
+
+    [ ! -f "phpmcrypt.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/mcrypt-$MCRYPT_VER.tgz" -O "phpmcrypt.tar.gz"
+    # 清理并建立干净的编译临时区
+    [ -d "phpmcrypt_build" ] && rm -rf "phpmcrypt_build"
+    mkdir "phpmcrypt_build"
+    tar -zxvf "phpmcrypt.tar.gz" -C "phpmcrypt_build" --strip-components=1
+    cd "phpmcrypt_build" || error_exit "Failed to enter dir: phpmcrypt_build"
 
     phpize
     ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config"
@@ -114,19 +137,26 @@ function add_mcrypt {
     [ $? != 0 ] && error_exit "phpmcrypt make install err"
 
     echo_ini mcrypt
+
+    # 清理临时编译温床
+    cd "$SRC_DIR" && rm -rf "phpmcrypt_build"
+    echo "phpmcrypt-$MCRYPT_VER installation complete."
 }
 
 # php-7.x requried
 function add_xlswriter {
     local XLSWRITER_VER=${EXT_VER:-"1.5.5"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-    [ ! -f xlswriter.tar.gz ] && wget --no-check-certificate https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz -O xlswriter.tar.gz
-    [ ! -d xlswriter ] && mkdir xlswriter
-    tar -zxvf xlswriter.tar.gz -C xlswriter --strip-components=1
-    cd xlswriter || error_exit "Failed to enter dir: xlswriter"
+
+    [ ! -f "xlswriter.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz" -O "xlswriter.tar.gz"
+    # 清理并建立干净的编译临时区
+    [ -d "xlswriter_build" ] && rm -rf "xlswriter_build"
+    mkdir "xlswriter_build"
+    tar -zxvf "xlswriter.tar.gz" -C "xlswriter_build" --strip-components=1
+    cd "xlswriter_build" || error_exit "Failed to enter dir: xlswriter_build"
 
     phpize
-    ./configure --with-php-config=/www/server/php-$PHP_VER/bin/php-config --enable-reader
+    ./configure --with-php-config="/www/server/php-$PHP_VER/bin/php-config" --enable-reader
     [ $? != 0 ] && error_exit "xlswriter configure err"
 
     make -j "$(nproc)"
@@ -135,8 +165,14 @@ function add_xlswriter {
     [ $? != 0 ] && error_exit "xlswriter make install err"
 
     echo_ini xlswriter
+
+    # 清理临时编译温床
+    cd "$SRC_DIR" && rm -rf "xlswriter_build"
+    echo "xlswriter-$XLSWRITER_VER installation complete."
 }
 
-if [ $1 ]; then
-   add_$1
+# 动态分发调用块
+if [ -n "$1" ]; then
+   # 确保执行安全的参数透传
+   type "add_$1" &>/dev/null && add_$1 "$@" || error_exit "Unsupported extension type: add_$1"
 fi
