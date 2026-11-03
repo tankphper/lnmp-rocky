@@ -27,11 +27,11 @@ function add_swoole {
     local SWOOLE_VER=${2:-"5.1.2"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
-    [ ! -f "swoole.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz" -O "swoole.tar.gz"
+    [ ! -f "swoole-$SWOOLE_VER.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz" -O "swoole-$SWOOLE_VER.tar.gz"
     # 清理并建立干净的编译临时区
     [ -d "swoole_build" ] && rm -rf "swoole_build"
     mkdir "swoole_build"
-    tar -zxvf "swoole.tar.gz" -C "swoole_build" --strip-components=1
+    tar -zxvf "swoole-$SWOOLE_VER.tar.gz" -C "swoole_build" --strip-components=1
     cd "swoole_build" || error_exit "Failed to enter dir: swoole_build"
 
     phpize
@@ -54,7 +54,7 @@ function add_swoole {
 
     # 清理临时编译温床
     cd "$SRC_DIR" && rm -rf "swoole_build"
-    echo "swoole-$PROTOBUF_VER installation complete."
+    echo "swoole-$SWOOLE_VER installation complete."
 }
 
 # protobuf-4.25.0 or newer for PHP 8.3
@@ -62,11 +62,11 @@ function add_protobuf {
     local PROTOBUF_VER=${2:-"4.25.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
-    [ ! -f "protobuf.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz" -O "protobuf.tar.gz"
+    [ ! -f "protobuf-$PROTOBUF_VER.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz" -O "protobuf-$PROTOBUF_VER.tar.gz"
     # 清理并建立干净的编译临时区
     [ -d "protobuf_build" ] && rm -rf "protobuf_build"
     mkdir "protobuf_build"
-    tar -zxvf "protobuf.tar.gz" -C "protobuf_build" --strip-components=1
+    tar -zxvf "protobuf-$PROTOBUF_VER.tar.gz" -C "protobuf_build" --strip-components=1
     cd "protobuf_build" || error_exit "Failed to enter dir: protobuf_build"
 
     phpize
@@ -91,11 +91,11 @@ function add_mcrypt {
     local MCRYPT_VER=${2:-"1.0.4"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
-    [ ! -f "phpmcrypt.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/mcrypt-$MCRYPT_VER.tgz" -O "phpmcrypt.tar.gz"
+    [ ! -f "phpmcrypt-$MCRYPT_VER.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/mcrypt-$MCRYPT_VER.tgz" -O "phpmcrypt-$MCRYPT_VER.tar.gz"
     # 清理并建立干净的编译临时区
     [ -d "phpmcrypt_build" ] && rm -rf "phpmcrypt_build"
     mkdir "phpmcrypt_build"
-    tar -zxvf "phpmcrypt.tar.gz" -C "phpmcrypt_build" --strip-components=1
+    tar -zxvf "phpmcrypt-$MCRYPT_VER.tar.gz" -C "phpmcrypt_build" --strip-components=1
     cd "phpmcrypt_build" || error_exit "Failed to enter dir: phpmcrypt_build"
 
     phpize
@@ -119,11 +119,11 @@ function add_redis {
     local PHPREDIS_VER=${2:-"6.3.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
-    [ ! -f "phpredis.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis.tar.gz"
+    [ ! -f "phpredis-$PHPREDIS_VER.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis-$PHPREDIS_VER.tar.gz"
     # 清理并建立干净的编译临时区
     [ -d "phpredis_build" ] && rm -rf "phpredis_build"
     mkdir "phpredis_build"
-    tar -zxvf "phpredis.tar.gz" -C "phpredis_build" --strip-components=1
+    tar -zxvf "phpredis-$PHPREDIS_VER.tar.gz" -C "phpredis_build" --strip-components=1
     cd "phpredis_build" || error_exit "Failed to enter dir: phpredis_build"
 
     phpize
@@ -147,11 +147,11 @@ function add_xlswriter {
     local XLSWRITER_VER=${2:-"3.0.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
-    [ ! -f "xlswriter.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz" -O "xlswriter.tar.gz"
+    [ ! -f "xlswriter-$XLSWRITER_VER.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz" -O "xlswriter-$XLSWRITER_VER.tar.gz"
     # 清理并建立干净的编译临时区
     [ -d "xlswriter_build" ] && rm -rf "xlswriter_build"
     mkdir "xlswriter_build"
-    tar -zxvf "xlswriter.tar.gz" -C "xlswriter_build" --strip-components=1
+    tar -zxvf "xlswriter-$XLSWRITER_VER.tar.gz" -C "xlswriter_build" --strip-components=1
     cd "xlswriter_build" || error_exit "Failed to enter dir: xlswriter_build"
 
     phpize
