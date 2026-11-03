@@ -56,7 +56,7 @@ function install_redis {
     # 复制并初始化 redis.conf 基础配置
     cp -f redis.conf "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^protected-mode yes@protected-mode no@' "$INSTALL_DIR/redis/etc/redis.conf"
-    sed -i 's@^bind 127.0.0.1@#bind 127.0.0.1@' "$INSTALL_DIR/redis/etc/redis.conf"
+    sed -i 's@^bind 127.0.0.1 -::1@#bind 127.0.0.1 -::1@' "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^# requirepass foobared@requirepass password@' "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^logfile ""@logfile "/www/logs/redis/redis.log"@' "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^dir ./@dir /www/server/redis/data/@' "$INSTALL_DIR/redis/etc/redis.conf"
