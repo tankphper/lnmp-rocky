@@ -85,34 +85,6 @@ function add_protobuf {
     echo "protobuf-$PROTOBUF_VER installation complete."
 }
 
-# phpredis-6.x or newer for PHP 8.3
-function add_redis {
-    local PHPREDIS_VER=${2:-"6.3.0"}
-    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
-
-    [ ! -f "phpredis.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis.tar.gz"
-    # 清理并建立干净的编译临时区
-    [ -d "phpredis_build" ] && rm -rf "phpredis_build"
-    mkdir "phpredis_build"
-    tar -zxvf "phpredis.tar.gz" -C "phpredis_build" --strip-components=1
-    cd "phpredis_build" || error_exit "Failed to enter dir: phpredis_build"
-
-    phpize
-    ./configure --with-php-config="$PHP_PREFIX/bin/php-config"
-    [ $? != 0 ] && error_exit "phpredis configure err"
-
-    make -j "$(nproc)"
-    [ $? != 0 ] && error_exit "phpredis make err"
-    make install
-    [ $? != 0 ] && error_exit "phpredis make install err"
-
-    echo_ini redis
-
-    # 清理临时编译温床
-    cd "$SRC_DIR" && rm -rf "phpredis_build"
-    echo "phpredis-$PHPREDIS_VER installation complete."
-}
-
 # php-7.2.x removed mcrypt
 # php --ri mcrypt will see version 2.5.8
 function add_mcrypt {
@@ -140,6 +112,34 @@ function add_mcrypt {
     # 清理临时编译温床
     cd "$SRC_DIR" && rm -rf "phpmcrypt_build"
     echo "phpmcrypt-$MCRYPT_VER installation complete."
+}
+
+# phpredis-6.x or newer for PHP 8.3
+function add_redis {
+    local PHPREDIS_VER=${2:-"6.3.0"}
+    cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
+
+    [ ! -f "phpredis.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis.tar.gz"
+    # 清理并建立干净的编译临时区
+    [ -d "phpredis_build" ] && rm -rf "phpredis_build"
+    mkdir "phpredis_build"
+    tar -zxvf "phpredis.tar.gz" -C "phpredis_build" --strip-components=1
+    cd "phpredis_build" || error_exit "Failed to enter dir: phpredis_build"
+
+    phpize
+    ./configure --with-php-config="$PHP_PREFIX/bin/php-config"
+    [ $? != 0 ] && error_exit "phpredis configure err"
+
+    make -j "$(nproc)"
+    [ $? != 0 ] && error_exit "phpredis make err"
+    make install
+    [ $? != 0 ] && error_exit "phpredis make install err"
+
+    echo_ini redis
+
+    # 清理临时编译温床
+    cd "$SRC_DIR" && rm -rf "phpredis_build"
+    echo "phpredis-$PHPREDIS_VER installation complete."
 }
 
 # xlswriter-1.5.5 or newer for PHP 8.3
