@@ -84,7 +84,7 @@ function add_protobuf {
 
 # phpredis-6.x or newer for PHP 8.3
 function add_redis {
-    local PHPREDIS_VER=${2:-"6.1.0"}
+    local PHPREDIS_VER=${2:-"6.3.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "phpredis.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/redis-${PHPREDIS_VER}.tgz" -O "phpredis.tar.gz"
