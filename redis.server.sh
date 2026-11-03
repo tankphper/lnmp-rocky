@@ -59,6 +59,7 @@ function install_redis {
     sed -i 's@^bind 127.0.0.1@#bind 127.0.0.1@' "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^# requirepass foobared@requirepass password@' "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^logfile ""@logfile "/www/logs/redis/redis.log"@' "$INSTALL_DIR/redis/etc/redis.conf"
+    sed -i 's@^dir ./@dir /www/server/redis/data/@' "$INSTALL_DIR/redis/etc/redis.conf"
     sed -i 's@^pidfile /var/run/redis_6379.pid@pidfile /www/server/redis/data/redis_6379.pid@' "$INSTALL_DIR/redis/etc/redis.conf"
 
     # 启用现代高并发 AOF 固化持久化机制，并配置高并发内存上限保护（示范设为 512MB）
