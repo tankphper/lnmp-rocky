@@ -22,8 +22,9 @@ function echo_ini {
 
 # --enable-async-redis require hiredis library supported
 # --enable-http2 require nghttp2 library supported
+# swoole-5.1.2 or newer for PHP 8.3
 function add_swoole {
-    local SWOOLE_VER=${2:-"4.5.10"}
+    local SWOOLE_VER=${2:-"5.1.2"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "swoole.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/swoole-$SWOOLE_VER.tgz" -O "swoole.tar.gz"
@@ -56,9 +57,9 @@ function add_swoole {
     echo "swoole-$PROTOBUF_VER installation complete."
 }
 
-# some cocos game use protobuf api
+# protobuf-4.25.0 or newer for PHP 8.3
 function add_protobuf {
-    local PROTOBUF_VER=${2:-"3.14.0"}
+    local PROTOBUF_VER=${2:-"4.25.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "protobuf.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/protobuf-$PROTOBUF_VER.tgz" -O "protobuf.tar.gz"
@@ -141,9 +142,9 @@ function add_mcrypt {
     echo "phpmcrypt-$MCRYPT_VER installation complete."
 }
 
-# php-7.x requried
+# xlswriter-1.5.5 or newer for PHP 8.3
 function add_xlswriter {
-    local XLSWRITER_VER=${2:-"1.5.5"}
+    local XLSWRITER_VER=${2:-"3.0.0"}
     cd "$SRC_DIR" || error_exit "Failed to enter dir: $SRC_DIR"
 
     [ ! -f "xlswriter.tar.gz" ] && wget --no-check-certificate "https://pecl.php.net/get/xlswriter-$XLSWRITER_VER.tgz" -O "xlswriter.tar.gz"
