@@ -6,9 +6,11 @@ PHP_PREFIX=$(php-config --prefix)
 PHP_API_VER=$(phpize --version | awk '/PHP Api Version/ {print $NF}')
 PHP_EXT_DIR=$(php-config --extension-dir)
 
+echo "=================================================="
 echo "PHP_VERSION: $PHP_VERSION"
 echo "PHP_API_VER: $PHP_API_VER"
 echo "PHP_EXT_DIR: $PHP_EXT_DIR"
+echo "=================================================="
 
 # add extension file to php.ini
 # 完美对齐多版本 php.d 动态扫描规范，且全量双引号加固
