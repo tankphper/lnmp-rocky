@@ -1,6 +1,6 @@
 . ./common.sh
 
-read -p "Enter redis version like 7.2.17: " REDIS_VERSION
+read -p "Enter redis version(default: 7.2.17): " REDIS_VERSION
 
 INSTALL_DIR="/www/server"
 SRC_DIR="$ROOT/src"
