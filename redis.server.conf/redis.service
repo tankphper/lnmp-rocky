@@ -2,18 +2,17 @@
 Description=Redis - high performance memory server
 Documentation=https://redis.io/documentation
 After=network.target
-# service config
+
 [Service]
+User=www
+Group=www
 Type=simple
-# pid path need same to nginx.conf 
-PIDFile=/var/run/redis_6379.pid
-# start
-ExecStart=/usr/local/bin/redis-server /www/server/etc/redis.conf
-# restart
+PIDFile=/www/server/redis/data/redis_6379.pid
+ExecStart=/usr/local/bin/redis-server /www/server/redis/etc/redis.conf
 ExecReload=/bin/kill -USR2 $MAINPID
-# close
 ExecStop=/bin/kill -SIGINT $MAINPID
-# create private tmp dir
 PrivateTmp=true
+Restart=always
+
 [Install]
 WantedBy=multi-user.target

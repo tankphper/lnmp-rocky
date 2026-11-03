@@ -128,6 +128,7 @@ function install_common {
     dnf config-manager --set-enabled crb >/dev/null 2>&1
     dnf install -y epel-release >/dev/null 2>&1
     # 强行刷新 DNF 缓存，确保系统能够立刻识别来自 EPEL 的高级开发包
+
     dnf makecache >/dev/null 2>&1
 
     echo "install dependency..."
@@ -138,11 +139,11 @@ function install_common {
 
     # 创建专门运行 MySQL 的系统用户和组
     # 检查 mysql 用户是否存在，不存在则精准创建
+    # -d to set user home_dir=/www
+    # -s to set user login shell=/sbin/nologin, you also to set /bin/bash
     if ! getent passwd mysql >/dev/null 2>&1; then
         useradd -U -d /dev/null -s /sbin/nologin -M mysql > /dev/null 2>&1
     fi
-    # -d to set user home_dir=/www
-    # -s to set user login shell=/sbin/nologin, you also to set /bin/bash
     
     # 强制让 chrony 立即同步网络时间
     chronyc -a makestep

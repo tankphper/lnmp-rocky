@@ -20,6 +20,7 @@ function install_openresty {
     [ ! -f "$OPENRESTY_DIR$SRC_SUFFIX" ] && wget "$OPENRESTY_DOWN"
     tar -zxvf "$OPENRESTY_DIR$SRC_SUFFIX"
     cd "$OPENRESTY_DIR" || error_exit "Failed to enter dir: $OPENRESTY_DIR"
+
     make clean > /dev/null 2>&1
 
     # 关闭 Nginx 调试符号，缩减体积，提高运行效率
@@ -153,11 +154,11 @@ function install_common {
 
     # 创建专门运行 openresty 和 php-fpm 的系统用户和组
     # 检查 www 用户是否存在，不存在则精准创建
+    # -d to set user home_dir=/www
+    # -s to set user login shell=/sbin/nologin, you also to set /bin/bash
     if ! getent passwd www >/dev/null 2>&1; then
         useradd -U -d /dev/null -s /sbin/nologin -M www > /dev/null 2>&1
     fi
-    # -d to set user home_dir=/www
-    # -s to set user login shell=/sbin/nologin, you also to set /bin/bash
 
     # 强制让 chrony 立即同步网络时间
     chronyc -a makestep
