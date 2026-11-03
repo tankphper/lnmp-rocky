@@ -113,8 +113,7 @@ function install_php {
     # 复制静态 Systemd 模板，并赋予标准读取权限
     cp -f ./sapi/fpm/php-fpm.service /etc/systemd/system/
     chmod 644 /etc/systemd/system/php-fpm.service
-    sed -i "s#@prefix@#$INSTALL_DIR/php#" /etc/systemd/system/php-fpm.service
-    sed -i "s#@exec_prefix@#$INSTALL_DIR/php#" /etc/systemd/system/php-fpm.service
+    sed -i "s@$INSTALL_DIR/$PHP_DIR@$INSTALL_DIR/php@" /etc/systemd/system/php-fpm.service
 
     # 注册并启动 Systemd 服务
     systemctl daemon-reload
